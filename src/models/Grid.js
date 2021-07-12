@@ -2,12 +2,13 @@
  * Basic grid data structure
  */
 export class Grid {
-  constructor (cols, rows, fillValue = null) {
+  constructor (cols, rows, fillValue = null, guard = true) {
     this._cols = cols
     this._rows = rows
     this._cells = cols * rows
+    this._guard = guard
     this._data = new Array(cols * rows)
-    if (fillValue) this._data.fill(fillValue)
+    if (fillValue !== null) this._data.fill(fillValue)
   }
 
   // Returns total number of grid cells
@@ -16,7 +17,7 @@ export class Grid {
   // Returns grid column base-0 offset of a valid cell index 'idx'
   // Throws Error if invalid 'idx'
   col (idx) {
-    this.guardIdx(idx)
+    if (this._guard) this.guardIdx(idx)
     return Math.floor(idx % this._cols)
   }
 
@@ -26,7 +27,7 @@ export class Grid {
   // Returns [col, row] of cell at 'idx'
   // Throws Error if invalid 'idx'
   colRow (idx) {
-    this.guardIdx(idx)
+    if (this._guard) this.guardIdx(idx)
     return [this.col(idx), this.row(idx)]
   }
 
@@ -46,7 +47,7 @@ export class Grid {
   // Returns data stored at idx
   // Throws an Error if invalid 'idx'
   getCell (idx) {
-    this.guardIdx(idx)
+    if (this._guard) this.guardIdx(idx)
     return this._data[idx]
   }
 
@@ -73,8 +74,10 @@ export class Grid {
 
   // Returns index of cell at [col, row], or throws Error if invalid 'col' or 'row'
   idx (col, row) {
-    this.guardCol(col)
-    this.guardRow(row)
+    if (this._guard) {
+      this.guardCol(col)
+      this.guardRow(row)
+    }
     return col + row * this._cols
   }
 
@@ -84,7 +87,7 @@ export class Grid {
   // Returns grid row base-0 offset of a valid cell index 'idx'
   // Throws an Error if invalid 'idx'
   row (idx) {
-    this.guardIdx(idx)
+    if (this._guard) this.guardIdx(idx)
     return Math.floor(idx / this._cols)
   }
 
@@ -101,10 +104,12 @@ export class Grid {
   // Sets data at cell 'idx' and returns *this*
   // Throws an Error if invalid 'idx'
   setCell (idx, value) {
-    this.guardIdx(idx)
+    if (this._guard) this.guardIdx(idx)
     this._data[idx] = value
     return this
   }
+
+  setGuard (toggle) { this._guard = toggle }
 
   toString (title = '', width = 4) {
     let str = `\n${title}\n   | `

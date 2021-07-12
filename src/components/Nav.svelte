@@ -51,6 +51,8 @@
 <nav>
 	<ul>
 		<li><a aria-current="{segment === undefined ? 'page' : undefined}" href=".">Home</a></li>
+		<li><a aria-current="{segment === 'grid' ? 'page' : undefined}" href="grid">Grid</a></li>
+		<li><a aria-current="{segment === 'canvasLogo' ? 'page' : undefined}" href="canvasLogo">CanvasLogo</a></li>
 		<li><a aria-current="{segment === 'about' ? 'page' : undefined}" href="about">About</a></li>
 		<li><a aria-current="{segment === 'releaseNotes' ? 'page' : undefined}" href="releaseNotes">Release Notes</a></li>
 	</ul>
