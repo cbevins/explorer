@@ -58,5 +58,5 @@ test('4: FireGrid Tinker Toy()', () => {
   expect(fire.status(50, 50)).toEqual(1)
   expect(fire.getIgnCells().size).toEqual(4)
   fire.burn()
-  console.log(fire.toString('Strike at 50, 50 with Unburnable Col and Row'))
+  // console.log(fire.toString('Strike at 50, 50 with Unburnable Col and Row'))
 })
