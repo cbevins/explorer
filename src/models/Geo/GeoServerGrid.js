@@ -11,6 +11,52 @@ export class GeoServerGrid extends GeoServer {
   // Required GeoServer method reimplementations
   // -----------------------------------------------------------------------------
 
+  // Calls *func(x, idx)* for every COLUMN within the bounds *fromX* - *thruX*
+  eachCol (func, fromX, thruX) {
+    const x0 = (fromX === undefined) ? this.west() : fromX
+    const x1 = (thruX === undefined) ? this.east() : thruX
+    const dx = this.xSpacing()
+    for (let x = x0, idx = 0; x <= x1; x += dx) { func(x, idx++) }
+  }
+
+  // Calls *func(x, y, datum, idx)* for every point within the bounds
+  eachDatum (func, fromX, fromY, thruX, thruY) {
+    const x0 = (fromX === undefined) ? this.west() : fromX
+    const x1 = (thruX === undefined) ? this.east() : thruX
+    const y0 = (fromY === undefined) ? this.north() : fromY
+    const y1 = (thruY === undefined) ? this.south() : thruY
+    const dx = this.xSpacing()
+    const dy = this.ySpacing()
+    for (let y = y0, idx = 0; y >= y1; y -= dy) {
+      for (let x = x0; x <= x1; x += dx) {
+        func(x, y, this.get(x, y), idx++)
+      }
+    }
+  }
+
+  // Calls *func(x, y, idx)* for every coordinate point within the bounds
+  eachPoint (func, fromX, fromY, thruX, thruY) {
+    const x0 = (fromX === undefined) ? this.west() : fromX
+    const x1 = (thruX === undefined) ? this.east() : thruX
+    const y0 = (fromY === undefined) ? this.north() : fromY
+    const y1 = (thruY === undefined) ? this.south() : thruY
+    const dx = this.xSpacing()
+    const dy = this.ySpacing()
+    for (let y = y0, idx = 0; y >= y1; y -= dy) {
+      for (let x = x0; x <= x1; x += dx) {
+        func(x, y, idx++)
+      }
+    }
+  }
+
+  // Calls *func(y, idx)* for every ROW within the bounds *fromY* - *thruY*
+  eachRow (func, fromY, thruY) {
+    const y0 = (fromY === undefined) ? this.north() : fromY
+    const y1 = (thruY === undefined) ? this.south() : thruY
+    const dy = this.ySpacing()
+    for (let y = y0, idx = 0; y >= y1; y -= dy) { func(y, idx++) }
+  }
+
   // Returns the data of the grid cell containing world [x, y] coordinate
   get (x, y) { return this._grid[this.idx(this.xCol(x), this.yRow(y))] }
 

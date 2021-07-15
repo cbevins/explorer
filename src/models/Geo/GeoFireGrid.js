@@ -1,138 +1,162 @@
 import { GeoBounds } from './GeoBounds.js'
 import { GeoCoord } from './GeoCoord.js'
 import { GeoServerGrid } from './GeoServerGrid.js'
+import { createFireEllipse } from './FireEllipse.js'
 
-// MOCK
-export class MockFireEllipse {
-  constructor (cols, rows, fireGrid) {
-    // super(cols, rows)
-    this._fireGrid = fireGrid
-    this._ignCol = Math.round(cols / 2) - 1
-    this._ignRow = Math.round(rows / 2) - 1
-  }
-
-  burn () { this.walk(this.ignCol(), this.ignRow(), this._fireGrid) }
-
-  ignCol () { return this._ignCol }
-
-  ignRow () { return this._ignRow }
-}
-
-// Cell status enums
-export const ControlLine = -3
+/**
+ * Burn status enums: anything > 0 is an ignition time
+ * All points belong to exactly one burn status category:
+ *  - Burnable, which have a non-negative value
+ *    - Unburned, whose value is an ignition time of 0
+ *    - Burned, whose value is an ignition time > 0
+ *  - Unburnable, which has a negative value indicating its type (water, rock, fireline, etc)
+ */
+export const Unburned = -1
 export const Unburnable = -2
-export const OutOfBounds = -1
-export const Unburned = 0
+export const OutOfBounds = -3
+export const ControlLine = -4
+export const Water = -5 // snow, ice
+export const Rock = -6 // talus, pavement
+export const Road = -7 // paved road, unpaved road, double track
+export const Trail = -8
 
 export class GeoFireGrid extends GeoServerGrid {
   constructor (west, north, east, south, xspacing, yspacing) {
     const bounds = new GeoBounds(west, north, east, south, xspacing, yspacing)
     super(bounds, Unburned)
-    this._ignSet = new Set() // Set of ignition cell GeoCoords to start each burning period
-    this._ign = new GeoCoord(0, 0) // current ignition cell [x, y]
-    this._period = 0 // current burning period
+    this._ignSet = new Set() // Set of ignition GeoCoords to start each burning period
+    this._ign = new GeoCoord(0, 0) // current ignition point [x, y]
+    // NOTE that *begins* IS WITHIN the period, while *ends* is NOT WITHIN the period
+    this._period = { _begins: 0, _ends: 0, _number: 0 }
   }
 
-  // Determines fire front ignition cells and burns them for 1 time period
-  burn () {
-    this._period++
-    this._ignSet = this.getIgnCells()
-    // console.log(`Period ${this._period} has ${this._ignSet.size} ignition cells`)
+  // Determines fire front ignition points and burns them for the duration
+  burn (duration) {
+    this.periodUpdate()
+    const t = this.periodMidpoint()
+    this._ignSet = this.getIgnPoints()
+    // console.log(`Period ${this.periodNumber()} has ${this._ignSet.size} ignition points`)
     this._ignSet.forEach(([col, row]) => {
-      this._ignCol = col
-      this._ignRow = row
-      this.setColRow(col, row, this._period)
-      // console.log(`Igniting ${col}, ${row} at period ${this._period}`)
-      // Get the fire behavior
-      // const fire = this._fireModel.run(col, row)
-      // this._ellipse = new FireEllipse(fire.length, fire.width, fire.heading)
-      this._ellipse = new MockFireEllipse(11, 11, this)
-      // Burn from this fire front cell using this ellipse template
-      this._ellipse.burn()
+      // Step 1 - get fire ellipse parameters for this point and time
+      // const ellipse = this.fireProvider().get(x, y, t)
+      const ellipse = createFireEllipse(10, 2, duration) // (headRos, lwr, duration)
+      // Step 2 - overlay ellipse on ignition point
     })
-  }
-
-  count () {
-    const n = {
-      period: this._period,
-      current: 0,
-      previous: 0,
-      unburned: 0,
-      unburnable: 0,
-      ignited: this._ignSet.size
-    }
-    this.data().forEach(status => {
-      if (status === 0) n.unburned++
-      else if (status < 0) n.unburnable++
-      else if (status === this._period) n.current++
-      else n.previous++
-    })
-    return n
   }
 
   // Returns an Set of GeoCoords of Burned points that are adjacent to Unburned Burnable points
-  getIgnCells () {
-    const cells = new Set()
+  getIgnPoints () {
+    const coords = new Set()
     const dx = this.xSpacing()
     const dy = this.ySpacing()
-    for (let y = this.north(); y <= this.south(); y -= dy) {
-      for (let x = this.west(); x <= this.east(); x += dx) {
-        if (this.isBurned(x, y)) {
-          if ((this.inbounds(x, y + dy) && this.isUnburned(x, y + dy)) ||
+    this.eachDatum((x, y, status) => {
+      if (this.isBurnedStatus(status)) {
+        if ((this.inbounds(x, y + dy) && this.isUnburned(x, y + dy)) ||
             (this.inbounds(x, y - dy) && this.isUnburned(x, y - dy)) ||
             (this.inbounds(x + dx, y) && this.isUnburned(x + dx, y)) ||
             (this.inbounds(x - dx, y) && this.isUnburned(x - dx, y))) {
-            cells.add(new GeoCoord(x, y))
-          }
+          coords.add(new GeoCoord(x, y))
         }
       }
-    }
-    return cells
+    })
+    return coords
   }
 
-  incrementPeriod () { this._period++ }
+  // Ignites the point [x, y] at time t, IFF it is Unburned
+  ignite (x, y, t) {
+    if (this.isUnburned(x, y)) this.set(x, y, t)
+    return this
+  }
 
   // Returns TRUE if point [x, y] is Unburned or Burned
   isBurnable (x, y) { return this.get(x, y) >= Unburned }
 
+  isBurnedableStatus (status) { return status >= Unburned }
+
   // Returns TRUE if point [x, y] is Burned
   isBurned (x, y) { return this.get(x, y) > Unburned }
+
+  isBurnedStatus (status) { return status > Unburned }
 
   // Returns TRUE if point [x, y] is Unburnable
   isUnburnable (x, y) { return this.get(x, y) < Unburned }
 
+  isUnburnableStatus (status) { return status < Unburned }
+
   // Returns TRUE if point [x, y] is Unburned
   isUnburned (x, y) { return this.get(x, y) === Unburned }
+
+  isUnburnedStatus (status) { return status === Unburned }
 
   mayTraverse (intoCol, intoRow) {
     // Translate the GridWalker col, row to this FireGrid's col, row
     const col = this._ignCol - this._ellipse.ignCol() + intoCol
     const row = this._ignRow - this._ellipse.ignRow() + intoRow
-    // If FireGrid cell is out-of-bounds, deny permission
+    // If point is out-of-bounds, deny permission
     if (!this.inbounds(col, row)) return false
-    // If FireGrid cell is unburnable, deny permission
+    // If point is unburnable, deny permission
     if (this.isUnburnable(col, row)) return false
-    // If FireGrid cell is Unburned, update it to the current burning period
+    // If point is Unburned, update it to the current burning period
     if (this.isUnburned(col, row)) {
-      // console.log(`Updating ${col}, ${row} from ${this.status(col, row)} to ${this._period}`)
-      this.setColRow(col, row, this._period)
+      // console.log(`Updating ${col}, ${row} from ${this.status(col, row)} to ${this.periodNumber()}`)
+      this.setColRow(col, row, this.periodNumber())
     }
-    // Give GridWalker permission to enter this cell
+    // Give GridWalker permission to traverse this point
     return true
   }
 
-  period () { return this._period }
+  periodBegins () { return this._period._begins }
 
-  reset () {
-    this.fill(Unburned)
-    this._ignSet = new Set()
-    this._period = 0
+  periodContains (t) { return t >= this.periodBegins() && t < this.periodEnds() }
+
+  periodDuration () { return this.periodEnds() - this.periodBegins() }
+
+  periodEnds () { return this._period._ends }
+
+  periodMidpoint () { return this.periodBegins() + this.periodDuration() / 2 }
+
+  periodNumber () { return this._period._number }
+
+  periodStats () {
+    const n = {
+      period: this.periodNumber(),
+      begins: this.periodBegins(),
+      ends: this.periodEnds(),
+      current: 0, // points burned during this period
+      previous: 0, // points burned during a previous period
+      unburned: 0, // unburned points
+      unburnable: 0, // unburnable points
+      ignited: this._ignSet.size // number of fire front points
+    }
+    console.log(this._ignSet)
+    this.eachDatum((x, y, status) => {
+      if (this.isUnburnedStatus(status)) n.unburned++
+      else if (this.isUnburnableStatus(status)) n.unburnable++
+      else if (status < this.periodBegins()) n.previous++
+      else if (status <= this.periodEnds()) n.current++
+      else n.unburned++ // ignites AFTER this time period
+    })
+    return n
+  }
+
+  periodUpdate (duration) {
+    const prevEnd = this._period._ends
+    this._period._ends = this._period._begins + duration
+    this._period._begins = prevEnd
+    this._period._number++
     return this
   }
 
-  // Sets all [col, row] in the array to Unburnable
-  setUnburnableCells (pairs, status = Unburnable) {
-    pairs.forEach(([col, row]) => { this.setColRow(col, row, status) })
+  reset () {
+    this.fill(Unburned)
+    this._period = { _begins: 0, _ends: 0, _number: 0 }
+    this._ignSet = new Set()
+    return this
+  }
+
+  // Sets all [x, y] in the array to *Unburnable* (or some other *status*) and returns *this*
+  setUnburnablePoints (pairs, status = Unburnable) {
+    pairs.forEach(([x, y]) => { this.set(x, y, status) })
     return this
   }
 
@@ -157,31 +181,22 @@ export class GeoFireGrid extends GeoServerGrid {
   // Returns an Unburnable status (<0), an Unburned status (0), or the period when ignited (>0)
   status (x, y) { return this.get(x, y) }
 
-  // Sets the point [x, y] to the current burning period, IFF it is Unburned
-  // Note: the burning period MUST BE > 0, or it just gets set to 0, which is Unburned!
-  strike (x, y) {
-    if (this.isUnburned(x, y)) {
-      this.set(x, y, this._period)
-    }
-    return this
-  }
-
   toString (title = '') {
     let str = `\n${title}\n     `
     for (let col = 0; col < this.cols(); col += 10) { str += `${(col / 10).toFixed(0).padEnd(10)}` }
     str += '\n     '
     for (let col = 0; col < this.cols(); col += 10) { str += '0123456789' }
     str += '\n'
-    for (let y = this.north(); y >= this.south(); y -= this.ySpacing()) {
+    this.eachRow(y => {
       str += y.toFixed(0).padStart(4) + ' '
-      for (let x = this.west(); x <= this.east(); x += this.xSpacing()) {
+      this.eachCol(x => {
         const status = this.get(x, y)
-        if (status < 0) str += 'X'
-        else if (status === 0) str += '-'
+        if (this.isUnburnableStatus(status)) str += 'X'
+        else if (this.isUnburnedStatus(status)) str += '-'
         else str += status.toFixed(0)
-      }
+      })
       str += '\n'
-    }
+    })
     return str
   }
 }

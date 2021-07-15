@@ -45,21 +45,42 @@ test('2: FireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnableColRow()',
   expect(gf.isUnburnable(1250, 4500)).toEqual(true) // middle vertical
   expect(gf.isUnburnable(1500, 4750)).toEqual(true) // middle horizontal
   expect(gf.isUnburnable(1510, 4740)).toEqual(false) // inside angle
-  console.log(gf.toString('Pre-Fire with Unburnable Col and Row'))
+  // console.log(gf.toString('UPDATED: Pre-Fire with Unburnable Col and Row'))
 })
 
 test('3: FireGrid.strike()', () => {
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
-    .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
-    .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
-    .strike(1500, 4500)
 
-  // set a fire strike at 50, 50 at period 1
-  expect(gf.isBurned(1500, 4500)).toEqual(false) // Period was still at 0 during strike
-  gf.incrementPeriod()
-  gf.strike(1500, 4500)
+  expect(gf.periodBegins()).toEqual(0)
+  expect(gf.periodEnds()).toEqual(0)
+  expect(gf.periodMidpoint()).toEqual(0)
+  expect(gf.periodNumber()).toEqual(0)
+
+  gf.setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
+    .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
+    .periodUpdate(10)
+    .ignite(1500, 4500, 0)
+
+  expect(gf.periodBegins()).toEqual(0)
+  expect(gf.periodEnds()).toEqual(10)
+  expect(gf.periodMidpoint()).toEqual(5)
+  expect(gf.periodNumber()).toEqual(1)
+
   expect(gf.isBurned(1500, 4500)).toEqual(true)
-  expect(gf.status(1500, 4500)).toEqual(1)
+  expect(gf.status(1500, 4500)).toEqual(0)
   expect(gf.isBurned(1510, 4500)).toEqual(false)
-  expect(gf.status(1510, 4500)).toEqual(0)
+  expect(gf.status(1510, 4500)).toEqual(-1)
+
+  const ignPoints = gf.getIgnPoints()
+  expect(ignPoints.size).toEqual(1)
+  expect(gf.periodStats()).toEqual({
+    period: 1,
+    begins: 0,
+    ends: 10,
+    current: 1,
+    previous: 0,
+    unburned: 10099,
+    unburnable: 101,
+    ignited: 0
+  })
 })
