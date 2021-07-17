@@ -1,44 +1,57 @@
+import { FireStatus } from './FireStatus.js'
 import { GeoBounds } from './GeoBounds.js'
 import { GeoCoord } from './GeoCoord.js'
 import { GeoServerGrid } from './GeoServerGrid.js'
-import { createFireEllipse } from './FireEllipse.js'
-import { FireStatus } from './FireStatus.js'
+import { GeoTime } from './GeoTime.js'
+import { IgnitionGridProvider } from './IgnitionGridProvider.js'
 import { Period } from './Period.js'
 
 export class GeoFireGrid extends GeoServerGrid {
-  constructor (west, north, east, south, xspacing, yspacing) {
+  constructor (west, north, east, south, xspacing, yspacing, fireInputProvider) {
     const bounds = new GeoBounds(west, north, east, south, xspacing, yspacing)
     super(bounds, FireStatus.Unburned)
+    this._fireInputProvider = fireInputProvider()
+    this._ignitionGridProvider = new IgnitionGridProvider()
     this._ignSet = new Set() // Set of ignition GeoCoords to start each burning period
     this._ign = new GeoCoord(0, 0) // current ignition point [x, y]
     // NOTE that *begins* IS WITHIN the period, while *ends* is NOT WITHIN the period
     this._period = new Period()
   }
 
-  // Determines fire front ignition points and burns them for the duration
+  // Burns points around the current fire front for a duration period.
+  // Duration period should be relatively brief (on the order of minutes)
+  // as constant spatial and temporal burning conditions are assumed from each ignition pt
+  // (but, of course, can vary between ignition points).
   burn (duration) {
-    this.period().update()
-    const t = this.period().ends()
-    this._ignSet = this.ignitionpointsAt(t)
-    // console.log(`Period ${this.period().number()} has ${this._ignSet.size} ignition points`)
-    this._ignSet.forEach(([col, row]) => {
-      // Step 1 - get fire ellipse parameters for this point and time
-      // const ellipse = this.fireProvider().get(x, y, t)
-      const ellipse = createFireEllipse(10, 2, duration) // (headRos, lwr, duration)
-      // Step 2 - overlay ellipse on ignition point
+    // start a new burning period
+    this.period().update(duration)
+    // Locate all burned/burning points adjacent to burnable-unburned points
+    this._ignSet = this.ignitionPointsAt(this.period().begins())
+    console.log(`Period ${this.period().number()} has ${this._ignSet.size} ignition points`)
+    // expand the fire from each ignition point via Huygen's Principle
+    this._ignSet.forEach(ignPt => {
+      console.log('Burn at', this.period().begins(), 'Point', ignPt.x(), ignPt.y(), ignPt.t())
+      // Get fire behavior inputs at this ignition point and time
+      const fireInput = this._fireInputProvider.getFireInput(ignPt.x(), ignPt.y(), ignPt.t())
+      // Get an IgnitionGrid for these fire behavior conditions
+      const ignGrid = this._ignitionGridProvider.getIgnitionGrid(this, fireInput)
+      // Overlay the ignition grid on this ignition point,
+      // and flood fill neighboring point ignition times accounting for unburnables
+      ignGrid.walk(ignPt.x(), ignPt.y(), ignPt.t(), this.period())
     })
   }
 
   // Ignites the point [x, y] at time t, IFF it is Unburned
+  // \TODO Add this to a stack of ignition points
   igniteAt (x, y, t) {
     if (this.isUnburnedAt(x, y, t)) this.set(x, y, t)
     return this
   }
 
-  // Returns an Set of GeoCoords of Burned points
-  // that are adjacent to Unburned Burnable points at time *t*
+  // Returns an Set of IgnitionPoints
+  // that are adjacent to Unburned but Burnable points at time *t*
   ignitionPointsAt (t) {
-    const coords = new Set()
+    const points = new Set()
     const dx = this.xSpacing()
     const dy = this.ySpacing()
     this.eachDatum((x, y, status) => {
@@ -47,11 +60,11 @@ export class GeoFireGrid extends GeoServerGrid {
             (this.inbounds(x, y - dy) && this.isUnburnedAt(x, y - dy, t)) ||
             (this.inbounds(x + dx, y) && this.isUnburnedAt(x + dx, y, t)) ||
             (this.inbounds(x - dx, y) && this.isUnburnedAt(x - dx, y, t))) {
-          coords.add(new GeoCoord(x, y))
+          points.add(new GeoTime(x, y, status))
         }
       }
     })
-    return coords
+    return points
   }
 
   // Returns TRUE if point [x, y] is Unburned or Burned
@@ -65,23 +78,6 @@ export class GeoFireGrid extends GeoServerGrid {
 
   // Returns TRUE if point [x, y] is Unburned at time *t*
   isUnburnedAt (x, y, t) { return FireStatus.isUnburnedAt(this.get(x, y), t) }
-
-  mayTraverse (intoCol, intoRow) {
-    // Translate the GridWalker col, row to this FireGrid's col, row
-    const col = this._ignCol - this._ellipse.ignCol() + intoCol
-    const row = this._ignRow - this._ellipse.ignRow() + intoRow
-    // If point is out-of-bounds, deny permission
-    if (!this.inbounds(col, row)) return false
-    // If point is unburnable, deny permission
-    if (this.isUnburnable(col, row)) return false
-    // If point is Unburned, update it to the current burning period
-    if (this.isUnburnedAt(col, row, this.period().begins())) {
-      // console.log(`Updating ${col}, ${row} from ${this.status(col, row)} to ${this.period().number()}`)
-      this.setColRow(col, row, this.period().number())
-    }
-    // Give GridWalker permission to traverse this point
-    return true
-  }
 
   // Returns current burning Period
   period () { return this._period }
@@ -107,14 +103,6 @@ export class GeoFireGrid extends GeoServerGrid {
       else n.other++ // ignites AFTER this time period
     })
     return n
-  }
-
-  periodUpdate (duration) {
-    const prevEnd = this._period._ends
-    this._period._ends = this._period._begins + duration
-    this._period._begins = prevEnd
-    this._period._number++
-    return this
   }
 
   reset () {
@@ -156,7 +144,7 @@ export class GeoFireGrid extends GeoServerGrid {
   status (x, y) { return this.get(x, y) }
 
   toString (title = '') {
-    let str = `\n${title}\n     `
+    let str = `\n${title} at time ${this.period().ends()}\n     `
     for (let col = 0; col < this.cols(); col += 10) { str += `${(col / 10).toFixed(0).padEnd(10)}` }
     str += '\n     '
     for (let col = 0; col < this.cols(); col += 10) { str += '0123456789' }
@@ -165,9 +153,9 @@ export class GeoFireGrid extends GeoServerGrid {
       str += y.toFixed(0).padStart(4) + ' '
       this.eachCol(x => {
         const status = this.get(x, y)
-        if (this.isUnburnableStatus(status)) str += 'X'
-        else if (this.isUnburnedStatus(status)) str += '-'
-        else str += status.toFixed(0)
+        if (FireStatus.isUnburnable(status)) str += 'X'
+        else if (FireStatus.isUnburnedAt(status, this.period().ends())) str += '-'
+        else str += '*'
       })
       str += '\n'
     })

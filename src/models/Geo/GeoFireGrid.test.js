@@ -8,7 +8,7 @@ const south = 4000
 const xdist = 10
 const ydist = 10
 
-test('1: GeoServerGrid constructor and accessors', () => {
+test('1: GeoFireGrid constructor and accessors', () => {
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
   expect(gf.west()).toEqual(west)
   expect(gf.north()).toEqual(north)
@@ -36,7 +36,7 @@ test('1: GeoServerGrid constructor and accessors', () => {
   }
 })
 
-test('2: FireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnableColRow()', () => {
+test('2: GeoFireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnable()', () => {
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
@@ -52,6 +52,7 @@ test('2: FireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnableColRow()',
 test('3: GeoFireGrid.period()', () => {
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
 
+  // Currently no period scheduled
   expect(gf.period().begins()).toEqual(0)
   expect(gf.period().ends()).toEqual(0)
   expect(gf.period().midpoint()).toEqual(0)
@@ -59,21 +60,37 @@ test('3: GeoFireGrid.period()', () => {
 
   gf.setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
-    .periodUpdate(10)
-    .igniteAt(1500, 4500, 0)
 
+  // Schedule an ignition at 15 minutes
+  gf.igniteAt(1500, 4500, 15)
+
+  // Update the Period by 10 minutes
+  gf.period().update(10)
   expect(gf.period().begins()).toEqual(0)
   expect(gf.period().ends()).toEqual(10)
   expect(gf.period().midpoint()).toEqual(5)
   expect(gf.period().number()).toEqual(1)
+
+  // Should be no ignition points at this period
+  expect(gf.ignitionPointsAt(10).size).toEqual(0)
+  expect(gf.ignitionPointsAt(20).size).toEqual(1)
 })
 
-test('4: GeoFireGrid.ignite()', () => {
+test('4: GeoFireGrid.nextDir()', () => {
+  const North = 0; const East = 1; const South = 2; const West = 3
+  const gf = new GeoFireGrid(0, 0, 1, 1, 1, 1)
+  expect(gf.nextDir(North)).toEqual(East)
+  expect(gf.nextDir(East)).toEqual(South)
+  expect(gf.nextDir(South)).toEqual(West)
+  expect(gf.nextDir(West)).toEqual(North)
+})
+
+test('5: GeoFireGrid.ignite()', () => {
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
-    .periodUpdate(10)
 
+  gf.period().update(10)
   expect(gf.get(1500, 4500)).toEqual(FireStatus.Unburned)
   expect(gf.isUnburnedAt(1500, 4500, 0)).toEqual(true)
 

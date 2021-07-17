@@ -17,4 +17,12 @@ export class Period {
   midpoint () { return this.begins() + this.duration() / 2 }
 
   number () { return this._number }
+
+  update (duration) {
+    const prevEnd = this._ends
+    this._ends = this._begins + duration
+    this._begins = prevEnd
+    this._number++
+    return this
+  }
 }
