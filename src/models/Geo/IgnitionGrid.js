@@ -37,6 +37,7 @@ export class IgnitionGrid extends GeoServerGrid {
     this._ellipse = fireEllipse
     this._fireGrid = fireGrid
     this.initDistTime()
+    console.log(`Ignition Grid has ${this.cols()} cols and ${this.rows()} rows`)
   }
 
   // Sets all point distances and ignition times
@@ -86,44 +87,65 @@ export class IgnitionGrid extends GeoServerGrid {
 
   traverse (fromX, fromY, towards, depth) {
     // console.log(fromX, fromY, towards, depth)
-    if (depth > 100) throw Error('walk() depth exceeds 100')
+    if (depth > 300) throw Error('walk() depth exceeds 100')
     // Get the neighboring point coordinates in the IgnitionGrid
     const [x, y] = this.neighboringPoint(fromX, fromY, towards)
+    this.fire.tested++
+
+    // 1 - point must be in the IgnitionGrid bounds
+    if (!this.inbounds(x, y)) {
+      console.log(`GO BACK: IgnitionGrid [${x}, ${y}] is out of IgnitionGrid bounds`)
+      return false
+    }
+
+    // In-bounds, so get the ignition data
     const ign = this.get(x, y)
     // Get the neighboring point coordinates in the FireGrid
     const fx = this.fire.x + x
     const fy = this.fire.y + y
 
-    // 1 - point must be in the IgnitionGrid bounds
-    if (!this.inbounds(x, y)) return false
-
     // 2 - point must be unvisited on this walk
-    if (ign.from !== Unvisited) return false
+    if (ign.from !== Unvisited) {
+      console.log(`GO BACK: IgnitionGrid [${x}, ${y}] was previously visited`)
+      return false
+    }
 
     // 3 - point must be in the FireGrid bounds
-    if (!this._fireGrid.inbounds(fx, fy)) return false
+    if (!this._fireGrid.inbounds(fx, fy)) {
+      console.log(`GO BACK: FireGrid [${fx}, ${fy}] is out of Fire Grid bounds`)
+      return false
+    }
 
-    // 4 - point must be Burnable
-    const status = this._fireGrid.status(fx, fy)
-    if (status <= FireStatus.Unburnable) return false
-
-    // 5 - point must not have burned in a PREVIOUS period
-    if (status !== FireStatus.Unburned && status < this.fire.period.begins()) return false
-
-    // 6 - point must be reachable by fire during current period
+    // 4 - point must be reachable by fire during current period
     const arrives = this.fire.time + ign.time
-    if (arrives >= this.fire.period.ends()) return false
+    // if (arrives >= this.fire.period.ends()) {
+    //   console.log(`FireGrid [${fx}, ${fy}] ignites at ${arrives}, after period ends`)
+    //   return false
+    // }
+
+    // 5 - point must be Burnable
+    const status = this._fireGrid.status(fx, fy)
+    if (status <= FireStatus.Unburnable) {
+      console.log(`GO BACK: FireGrid [${fx}, ${fy}] status ${status} is Unburnable`)
+      return false
+    }
+
+    // 6 - point must not have burned in a PREVIOUS period
+    if (status !== FireStatus.Unburned && status < this.fire.period.begins()) {
+      console.log(`GO BACK: FireGrid [${fx}, ${fy}] was burned in a previous period at ${status}`)
+      return false
+    }
 
     // This point is traversable; set its 'from', which also flags it as Visited
     const from = oppositeDir[towards]
     this.setFrom(x, y, from)
-    this.fire.walked++
+    this.fire.traversed++
 
     // Update point's scheduled ignition time if it is Unburned or scheulded later
     if (status === FireStatus.Unburned || arrives < status) {
       this._fireGrid.set(this.fire.x, this.fire.y, arrives)
       this.fire.burned++
-      console.log(`Burned ${fx}, ${fy} at ${arrives}`)
+      console.log(`GO AHEAD: FireGrid [${fx}, ${fy}] ignited at ${arrives}`)
     }
 
     // Continue traversal by visitng all three neighbors
@@ -135,12 +157,21 @@ export class IgnitionGrid extends GeoServerGrid {
 
   walk (fireIgnX, fireIgnY, fireIgnTime, period) {
     // We can save the fire ignition point properties since they don't change during the walk
-    this.fire = { x: fireIgnX, y: fireIgnY, time: fireIgnTime, period: period, walked: 0, burned: 0 }
+    this.fire = {
+      x: fireIgnX,
+      y: fireIgnY,
+      time: fireIgnTime,
+      period: period,
+      points: this.cols() * this.rows(),
+      tested: 0,
+      traversed: 0,
+      burned: 0
+    }
     this.initUnvisited()
     this.setFrom(0, 0, Origin)
     ;[North, East, South, West].forEach(towards => {
       this.traverse(0, 0, towards, 0)
     })
-    // console.log(this.fire)
+    console.log('Burn Period Results', this.fire)
   }
 }

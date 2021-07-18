@@ -14,6 +14,7 @@ export class IgnitionGridProvider {
 
   createIgnitionGrid (fireGrid, fireInput, key) {
     const fire = this._fireBehaviorProvider.getFireBehavior(fireInput)
+    console.log('Fire Behavior at this point and time is', fire)
     const fireEllipse = createFireEllipse(fire.headRos, fire.lwr, fire.heading, fire.input.duration)
     const ignGrid = new IgnitionGrid(fireGrid, fireEllipse)
     this._map.set(key, ignGrid)

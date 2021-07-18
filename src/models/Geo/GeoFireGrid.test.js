@@ -1,5 +1,6 @@
 import { GeoFireGrid } from './GeoFireGrid.js'
 import { FireStatus } from './FireStatus.js'
+import { FireInputProviderMock } from './FireInputProviderMock.js'
 
 const west = 1000
 const east = 2000
@@ -7,9 +8,10 @@ const north = 5000
 const south = 4000
 const xdist = 10
 const ydist = 10
+const fireInputProvider = new FireInputProviderMock()
 
 test('1: GeoFireGrid constructor and accessors', () => {
-  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
+  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
   expect(gf.west()).toEqual(west)
   expect(gf.north()).toEqual(north)
   expect(gf.east()).toEqual(east)
@@ -37,7 +39,7 @@ test('1: GeoFireGrid constructor and accessors', () => {
 })
 
 test('2: GeoFireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnable()', () => {
-  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
+  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
   expect(gf.isUnburnable(1250, 4750)).toEqual(true) // upper left
@@ -50,7 +52,7 @@ test('2: GeoFireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnable()', ()
 })
 
 test('3: GeoFireGrid.period()', () => {
-  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
+  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
 
   // Currently no period scheduled
   expect(gf.period().begins()).toEqual(0)
@@ -76,17 +78,8 @@ test('3: GeoFireGrid.period()', () => {
   expect(gf.ignitionPointsAt(20).size).toEqual(1)
 })
 
-test('4: GeoFireGrid.nextDir()', () => {
-  const North = 0; const East = 1; const South = 2; const West = 3
-  const gf = new GeoFireGrid(0, 0, 1, 1, 1, 1)
-  expect(gf.nextDir(North)).toEqual(East)
-  expect(gf.nextDir(East)).toEqual(South)
-  expect(gf.nextDir(South)).toEqual(West)
-  expect(gf.nextDir(West)).toEqual(North)
-})
-
-test('5: GeoFireGrid.ignite()', () => {
-  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist)
+test('4: GeoFireGrid.ignite()', () => {
+  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
 
@@ -118,4 +111,50 @@ test('5: GeoFireGrid.ignite()', () => {
     ignited: 0,
     other: 0
   })
+})
+
+const mockFire = {
+  lwr: 3.575543332181236,
+  backDist: 1.0258645045017885,
+  backRos: 1.0258645045017885,
+  flankDist: 7.189669573093315,
+  flankRos: 7.189669573093315,
+  headDist: 50.38808570081844,
+  headRos: 50.38808570081844,
+  heading: 135,
+  headingUp: 0,
+  length: 51.41395020532023,
+  width: 14.37933914618663,
+  input: {
+    x: 1,
+    y: 2,
+    t: 3,
+    fuelModel: '124',
+    curedHerb: 0.778,
+    dead1: 0.05,
+    dead10: 0.07,
+    dead100: 0.09,
+    duration: 1,
+    liveHerb: 0.5,
+    liveStem: 1.5,
+    slope: 0.25,
+    aspect: 315,
+    windFrom: 315,
+    windSpeed: 880
+  }
+}
+
+test('5: GeoFireGrid.burn()', () => {
+  const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
+    .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
+    .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
+
+  expect(gf.get(1500, 4500)).toEqual(FireStatus.Unburned)
+  expect(gf.isUnburnedAt(1500, 4500, 0)).toEqual(true)
+
+  gf.igniteAt(1500, 4500, 0)
+  const ignPoints = gf.ignitionPointsAt(1)
+  expect(ignPoints.size).toEqual(1)
+
+  gf.burn(1)
 })

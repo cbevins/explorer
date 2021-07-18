@@ -5,21 +5,21 @@
 import { FireInputProvider } from './FireInputProvider.js'
 
 export class FireInputProviderMock extends FireInputProvider {
-  getFireInput (x, y, t) {
+  getFireInput (atX, atY, atTime, duration) {
     return {
-      x: x,
-      y: y,
-      t: t,
+      x: atX,
+      y: atY,
+      t: atTime,
       fuelModel: '124',
       curedHerb: 0.778,
       dead1: 0.05,
       dead10: 0.07,
       dead100: 0.09,
-      duration: 1,
+      duration: duration,
       liveHerb: 0.5,
       liveStem: 1.5,
       slope: 0.25,
-      aspect: 180,
+      aspect: 315,
       windFrom: 315,
       windSpeed: 10 * 88
     }

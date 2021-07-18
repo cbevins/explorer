@@ -10,7 +10,7 @@ export class GeoFireGrid extends GeoServerGrid {
   constructor (west, north, east, south, xspacing, yspacing, fireInputProvider) {
     const bounds = new GeoBounds(west, north, east, south, xspacing, yspacing)
     super(bounds, FireStatus.Unburned)
-    this._fireInputProvider = fireInputProvider()
+    this._fireInputProvider = fireInputProvider
     this._ignitionGridProvider = new IgnitionGridProvider()
     this._ignSet = new Set() // Set of ignition GeoCoords to start each burning period
     this._ign = new GeoCoord(0, 0) // current ignition point [x, y]
@@ -27,17 +27,18 @@ export class GeoFireGrid extends GeoServerGrid {
     this.period().update(duration)
     // Locate all burned/burning points adjacent to burnable-unburned points
     this._ignSet = this.ignitionPointsAt(this.period().begins())
-    console.log(`Period ${this.period().number()} has ${this._ignSet.size} ignition points`)
+    console.log('Burn', this.period(), `has ${this._ignSet.size} ignition points`)
     // expand the fire from each ignition point via Huygen's Principle
     this._ignSet.forEach(ignPt => {
-      console.log('Burn at', this.period().begins(), 'Point', ignPt.x(), ignPt.y(), ignPt.t())
+      console.log(`Ignition Point [${ignPt.x()}, ${ignPt.y()}] was ignited at time ${ignPt.time()}`)
       // Get fire behavior inputs at this ignition point and time
-      const fireInput = this._fireInputProvider.getFireInput(ignPt.x(), ignPt.y(), ignPt.t())
+      const fireInput = this._fireInputProvider.getFireInput(
+        ignPt.x(), ignPt.y(), this.period().begins(), duration)
       // Get an IgnitionGrid for these fire behavior conditions
       const ignGrid = this._ignitionGridProvider.getIgnitionGrid(this, fireInput)
       // Overlay the ignition grid on this ignition point,
       // and flood fill neighboring point ignition times accounting for unburnables
-      ignGrid.walk(ignPt.x(), ignPt.y(), ignPt.t(), this.period())
+      ignGrid.walk(ignPt.x(), ignPt.y(), ignPt.time(), this.period())
     })
   }
 
