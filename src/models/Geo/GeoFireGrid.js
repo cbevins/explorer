@@ -22,9 +22,7 @@ export class GeoFireGrid extends GeoServerGrid {
   // Duration period should be relatively brief (on the order of minutes)
   // as constant spatial and temporal burning conditions are assumed from each ignition pt
   // (but, of course, can vary between ignition points).
-  burn (duration) {
-    // start a new burning period
-    this.period().update(duration)
+  burn () {
     // Locate all burned/burning points adjacent to burnable-unburned points
     this._ignSet = this.ignitionPointsAt(this.period().begins())
     console.log('Burn', this.period(), `has ${this._ignSet.size} ignition points`)
@@ -33,7 +31,7 @@ export class GeoFireGrid extends GeoServerGrid {
       console.log(`Ignition Point [${ignPt.x()}, ${ignPt.y()}] was ignited at time ${ignPt.time()}`)
       // Get fire behavior inputs at this ignition point and time
       const fireInput = this._fireInputProvider.getFireInput(
-        ignPt.x(), ignPt.y(), this.period().begins(), duration)
+        ignPt.x(), ignPt.y(), this.period().begins(), this.period().duration())
       // Get an IgnitionGrid for these fire behavior conditions
       const ignGrid = this._ignitionGridProvider.getIgnitionGrid(this, fireInput)
       // Overlay the ignition grid on this ignition point,

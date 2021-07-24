@@ -152,9 +152,14 @@ test('5: GeoFireGrid.burn()', () => {
   expect(gf.get(1500, 4500)).toEqual(FireStatus.Unburned)
   expect(gf.isUnburnedAt(1500, 4500, 0)).toEqual(true)
 
+  // Ignite a single point at time 0
   gf.igniteAt(1500, 4500, 0)
   const ignPoints = gf.ignitionPointsAt(1)
   expect(ignPoints.size).toEqual(1)
 
-  gf.burn(1)
+  // start a new burning period
+  gf.period().update(2)
+  gf.burn()
+  // ignPoints = gf.ignitionPointsAt(1)
+  // expect(ignPoints.size).toEqual(1)
 })
