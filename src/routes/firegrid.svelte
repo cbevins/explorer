@@ -1,14 +1,14 @@
 <script>
 	import { onMount } from 'svelte'
-  import { GeoFireGrid } from '../models/Geo/GeoFireGrid.js'
-  import { FireInputProviderMock } from '../models/Geo/FireInputProviderMock.js'
-  import { FireStatus } from '../models/GeoFire/FireStatus.js'
+  import { FireStatus, GeoFireGrid } from '../models/GeoFire'
+  import { FireInputProviderMock } from '../models/FireBehavior'
+  import SimpleTable from '../components/SimpleTable.svelte'
 
   // Create a GeoFireGrid instance 1000 ft west-to-east and 1000 ft north-to-south with 10-ft spacing
   let west = 1000
-  let east = 2000
+  let east = 3000
   let north = 5000
-  let south = 4000
+  let south = 3000
   let xdist = 10
   let ydist = 10
   let width = east - west
@@ -20,8 +20,8 @@
   const fireGrid = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
 
   // Ignite a single point at time 0
-  let ignX = 1500 // half way between x 1000 and 2000, at col 50
-  let ignY = 4500 // half way between y 4000 and 5000, at row 50
+  let ignX = 1200
+  let ignY = 4800
   let ignT = 0
 
   // Burning period duration and maximum burning periods
@@ -29,11 +29,8 @@
   let periodMax = 24 * 60 // 24 hours
 
   // Burning stats
-  let ignitionPts = 0
-  let currentPts = 0
-  let previousPts = 0
-  let unburnedPts = 0
-  let unburnablePts = 0
+  let summary = []
+  let running = true
 
   // Here are some named patterns of unburnable points: TRUE imnplements it, FALSE ignores it
   let pattern = {
@@ -47,19 +44,19 @@
   let ctx // reference to the canvas 2d context
   let frame // id of the current animation frame
 
+  // Runs GeoFireGrid simulation for 1 burning period
   function burn () {
     fireGrid.burnForPeriod(periodDuration)
-    console.log(fireGrid.periodStats())
     draw()
   }
 
-  function clear () {
-    fireGrid.reset()
-    setUnburnablePattern(pattern)
-    fireGrid.igniteAt(ignX, ignY, ignT)
-    draw()
+  function loop(t) {
+    frame = requestAnimationFrame(loop)
+    if (fireGrid.period().number() >= periodMax) cancelAnimationFrame(frame)
+    burn()
   }
 
+  // Updates the GeoFireGrid displai
   function draw() {
     ctx.lineWidth = 1
     let current = 0
@@ -91,17 +88,50 @@
         ctx.fillRect(col*xdist, row*ydist, xdist, ydist)
       }
     }
-    ignitionPts = fireGrid._ignSet.size
-    currentPts = current
-    previousPts = previous
-    unburnedPts = unburned
-    unburnablePts = unburnable
+    const d = []
+    d.push(['Period Number', fireGrid.period().number()])
+    d.push(['Period Begins', fireGrid.period().begins()])
+    d.push(['Period Ends', fireGrid.period().ends()])
+    d.push(['Ignition Points', fireGrid._ignSet.size])
+    d.push(['Newly Burned', current])
+    d.push(['Previously Burned', previous])
+    d.push(['Unburned', unburned])
+    d.push(['Unburnable', unburnable])
+    summary = d
+
+    if (unburned === 0 || fireGrid.ignitionPoints() === 0) {
+      cancelAnimationFrame(frame)
+    }
+ }
+
+  // Reset button callback: resets the GeoFireGrid back to original state
+  function reset () {
+    fireGrid.reset()
+    setUnburnablePattern(pattern)
+    fireGrid.igniteAt(ignX, ignY, ignT)
+    draw()
+  }
+
+  // 'Run/Pause' button callback: starts, pauses, and resumes simulation
+  function run () {
+    running = !running
+    if (running) {
+      cancelAnimationFrame(frame)
+    } else {
+      frame = requestAnimationFrame(loop)
+		  // return () => { cancelAnimationFrame(frame) }
+    }
+  }
+
+  // 'Step' button callback: pauses animation and runs 1 burning period
+  function step () {
+    cancelAnimationFrame(frame)
+    burn()
   }
 
 	onMount(() => {
 		ctx = canvas.getContext('2d')
-    clear()
-		return () => { cancelAnimationFrame(frame) }
+    reset()
 	})
 
   function setUnburnablePattern (pattern) {
@@ -125,23 +155,28 @@
 <h5 class='mb-3'>GeoFireGrid Tinker Toy</h5>
   <div class="row">
     <div class="col">
-      <button class='btn-primary mb-3' on:click={burn}>Burn</button>
-      <button class='btn-primary mb-3' on:click={clear}>Clear</button>
+      <!-- Button row -->
+      <div class="row">
+        <div class="col">
+          <button class='btn-primary mb-3' on:click={step}>Step</button>
+        </div>
+        <div class="col">
+          <button class='btn-primary mb-3' on:click={run}>{running?'Run':'Pause'}</button>
+        </div>
+        <div class="col">
+          <button class='btn-primary mb-3' on:click={reset}>Reset</button>
+        </div>
+      </div>
+      <!-- Burn status table -->
+      <div class="row">
+        <SimpleTable title='Burn Status' data={summary} />
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      <p>Period {fireGrid.period().number()} {fireGrid.period().begins()} {fireGrid.period().ends()},
-        {ignitionPts} Ign Pts,
-        {currentPts} new,
-        {previousPts} prev,
-        {unburnedPts} unburned,
-        {unburnablePts} unburnable
-      </p>
-    </div>
-  </div>
 
-  <canvas bind:this={canvas} width={width} height={height}></canvas>
+    <div class="col-9">
+      <canvas bind:this={canvas} width={width} height={height}></canvas>
+    </div>
+  </div>
 
   <style>
 	canvas {

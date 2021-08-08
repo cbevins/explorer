@@ -1,10 +1,12 @@
 /**
- * FireInputProvider is a black box called by GeoFireGrid
+ * FireInputProviderMock is a black box called by GeoFireGrid
  * to get the necessary fire behavior inputs at point [x, y] at time t.
+ *
+ * It returns the same set of fire behavior inputs for every invocation.
  */
-import { FireInputProvider } from './FireInputProvider.js'
+import { FireInputProviderInterface } from './FireInputProviderInterface.js'
 
-export class FireInputProviderMock extends FireInputProvider {
+export class FireInputProviderMock extends FireInputProviderInterface {
   getFireInput (atX, atY, atTime, duration) {
     return {
       x: atX,

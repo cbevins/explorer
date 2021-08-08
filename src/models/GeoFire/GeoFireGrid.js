@@ -74,6 +74,8 @@ export class GeoFireGrid extends GeoServerGrid {
     return this
   }
 
+  ignitionPoints () { return this._ignSet.size }
+
   // Returns an Set of *IgnitionPoints*, ignited or previously burned points
   // that are adjacent to Unburned but Burnable points at time *t*
   ignitionPointsAt (t) {

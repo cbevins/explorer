@@ -1,6 +1,6 @@
 import { GeoFireGrid } from './GeoFireGrid.js'
 import { FireStatus } from './FireStatus.js'
-import { FireInputProviderMock } from '../FireBehavior/FireInputProviderMock.js'
+import { FireInputProviderMock } from '../FireBehavior'
 
 const west = 1000
 const east = 2000
