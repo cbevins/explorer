@@ -6,9 +6,9 @@
 
   // Create a GeoFireGrid instance 1000 ft west-to-east and 1000 ft north-to-south with 10-ft spacing
   let west = 1000
-  let east = 3000
+  let east = 2000
   let north = 5000
-  let south = 3000
+  let south = 4000
   let xdist = 10
   let ydist = 10
   let width = east - west
@@ -37,6 +37,7 @@
     shortCol: false,
     shortRow: false,
     colHole: true,
+    roads: true
   }
 
   // These properties are set by onMount():
@@ -102,7 +103,13 @@
     if (unburned === 0 || fireGrid.ignitionPoints() === 0) {
       cancelAnimationFrame(frame)
     }
- }
+  }
+
+  // Gets canvas and context once they are mounted
+	onMount(() => {
+		ctx = canvas.getContext('2d')
+    reset()
+	})
 
   // Reset button callback: resets the GeoFireGrid back to original state
   function reset () {
@@ -129,11 +136,6 @@
     burn()
   }
 
-	onMount(() => {
-		ctx = canvas.getContext('2d')
-    reset()
-	})
-
   function setUnburnablePattern (pattern) {
     if (pattern.shortCol) {
       fireGrid.setUnburnableCol(1250, 4250, 4750) // at x=1250 (col 25), y=4250 (row 75) to y=4750 (row 25)
@@ -144,6 +146,11 @@
     if (pattern.colHole) {
       fireGrid.setUnburnableCol(1250, 4500, 5000) // at x=1250 (col 25) y=5000 (row 0) to y=4500 (row=50)
       fireGrid.setUnburnableCol(1250, 4000, 4480)
+    }
+    if (pattern.roads) {
+      fireGrid.setUnburnableCol(1500, 4250, 4750)
+      fireGrid.setUnburnableCol(1700, 4250, 4750)
+      fireGrid.setUnburnableCol(1900, 4250, 4750)
     }
   }
 </script>
@@ -169,7 +176,7 @@
       </div>
       <!-- Burn status table -->
       <div class="row">
-        <SimpleTable title='Burn Status' data={summary} />
+        <SimpleTable title='Burn Status' data={summary} id='geoFireGridSummary' />
       </div>
     </div>
 
