@@ -1,12 +1,16 @@
 /**
+ * GeoBounds represents a rectangular geographic extent (bounding box)
+ * with a fixed internal spacing between neighboring x-axis (west-to-east)
+ * and y-axis (south-to-north) points.
+ *
  * The convention used for argument order for points is [x, y], i.e.,
  *  - [easting, northing]
  *  - [longitude, latitude]
  *
- * The convention use for argument order for rectangles is
+ * The convention used for argument order for rectangles is
  *  - upper-left point, lower right point, i.e.,
- *  - west, north, east, south
- *  - left, top, right, bottom
+ *    - west, north, east, south
+ *    - left, top, right, bottom
  */
 import { GeoCoord } from './GeoCoord.js'
 

@@ -2,8 +2,8 @@
  * A cache of IgnitionGrid instances, which are differentiated by 4 properties of
  * heading spread rate, length-to-width ratio, heading degrees, and duration.
  */
-import { FireBehaviorProvider } from './FireBehaviorProvider.js'
-import { createFireEllipse } from './FireEllipse.js'
+import { FireBehaviorProvider } from '../FireBehavior/FireBehaviorProvider.js'
+import { createFireEllipse } from '../FireEllipse'
 import { IgnitionGrid } from './IgnitionGrid.js'
 
 export class IgnitionGridProvider {
@@ -14,7 +14,7 @@ export class IgnitionGridProvider {
 
   createIgnitionGrid (fireGrid, fireInput, key) {
     const fire = this._fireBehaviorProvider.getFireBehavior(fireInput)
-    console.log('Fire Behavior at this point and time is', fire)
+    // console.log('Fire Behavior at this point and time is', fire)
     const fireEllipse = createFireEllipse(fire.headRos, fire.lwr, fire.heading, fire.input.duration)
     const ignGrid = new IgnitionGrid(fireGrid, fireEllipse)
     this._map.set(key, ignGrid)
@@ -23,7 +23,7 @@ export class IgnitionGridProvider {
 
   getIgnitionGrid (fireGrid, fireInput) {
     const key = this.gridKey(fireInput)
-    if (this.hasGrid(key)) return this.getGrid()
+    if (this.hasGrid(key)) return this.getGrid(key)
     return this.createIgnitionGrid(fireGrid, fireInput, key)
   }
 

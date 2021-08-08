@@ -1,3 +1,6 @@
+/**
+ * GeoServerGrid implements the GeoServer using a simple array as the grid data structure.
+ */
 import { GeoServer } from './GeoServer.js'
 
 export class GeoServerGrid extends GeoServer {
@@ -11,7 +14,20 @@ export class GeoServerGrid extends GeoServer {
   // Required GeoServer method reimplementations
   // -----------------------------------------------------------------------------
 
-  // Calls *func(x, idx)* for every COLUMN within the bounds *fromX* - *thruX*
+  // Returns the data of the grid cell containing world [x, y] coordinate
+  get (x, y) { return this._grid[this.idx(this.xCol(x), this.yRow(y))] }
+
+  // Sets the value of the grid cell containing world [x, y] coordinate
+  set (x, y, value) {
+    this._grid[this.idx(this.xCol(x), this.yRow(y))] = value
+    return this
+  }
+
+  // -----------------------------------------------------------------------------
+  // Convenience iterator methods
+  // -----------------------------------------------------------------------------
+
+  // Calls *func(xPos, idx)* for every x-axis point *fromX* *thruX* by xSpacing
   eachCol (func, fromX, thruX) {
     const x0 = (fromX === undefined) ? this.west() : fromX
     const x1 = (thruX === undefined) ? this.east() : thruX
@@ -19,7 +35,10 @@ export class GeoServerGrid extends GeoServer {
     for (let x = x0, idx = 0; x <= x1; x += dx) { func(x, idx++) }
   }
 
-  // Calls *func(x, y, datum, idx)* for every point within the bounds
+  // For every y-axis point *fromY* *thruY* by ySpacing
+  // and for every x-axis point *fromX* *thruX* by xSpacing
+  // invokes the callback function *func(xPos, yPos, datum, idx)*
+  // and provides the datum associated with the point
   eachDatum (func, fromX, fromY, thruX, thruY) {
     const x0 = (fromX === undefined) ? this.west() : fromX
     const x1 = (thruX === undefined) ? this.east() : thruX
@@ -34,7 +53,10 @@ export class GeoServerGrid extends GeoServer {
     }
   }
 
-  // Calls *func(x, y, idx)* for every coordinate point within the bounds
+  // For every y-axis point *fromY* *thurY* by ySpacing
+  // and for every x-axis point *fromX* *thruX* by xSpacing
+  // invokes the callback function *func(xPos, yPos, idx)*
+  // WITHOUT retieving or providing the snap point's data
   eachPoint (func, fromX, fromY, thruX, thruY) {
     const x0 = (fromX === undefined) ? this.west() : fromX
     const x1 = (thruX === undefined) ? this.east() : thruX
@@ -49,21 +71,12 @@ export class GeoServerGrid extends GeoServer {
     }
   }
 
-  // Calls *func(y, idx)* for every ROW within the bounds *fromY* - *thruY*
+  // Calls *func(yPos, idx)* for every y-axis point *fromY* *thruY* by ySpacing
   eachRow (func, fromY, thruY) {
     const y0 = (fromY === undefined) ? this.north() : fromY
     const y1 = (thruY === undefined) ? this.south() : thruY
     const dy = this.ySpacing()
     for (let y = y0, idx = 0; y >= y1; y -= dy) { func(y, idx++) }
-  }
-
-  // Returns the data of the grid cell containing world [x, y] coordinate
-  get (x, y) { return this._grid[this.idx(this.xCol(x), this.yRow(y))] }
-
-  // Sets the value of the grid cell containing world [x, y] coordinate
-  set (x, y, value) {
-    this._grid[this.idx(this.xCol(x), this.yRow(y))] = value
-    return this
   }
 
   // -----------------------------------------------------------------------------

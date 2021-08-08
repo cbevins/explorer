@@ -6,7 +6,7 @@
  * - time since ignition (optional)
  * - an ignition point at [0,0]
  */
-import { abs, azimuthOf, caz2rot, cos, pi, rotatePoint, sin, sqrt } from './trig.js'
+import { abs, azimuthOf, caz2rot, cos, pi, rotatePoint, sin, sqrt } from '../Trig'
 
 export class FireEllipse {
   /**
@@ -85,6 +85,16 @@ export class FireEllipse {
   // Returns degrees clockwise from fire head to point [x,y]
   betaDegreesToPoint (x, y) { return (360 + (azimuthOf(x, y) - this._degrees)) % 360 }
 
+  // Returns {radians, ratio, rate, dist, time}
+  betaPoint (x, y) {
+    const radians = this.betaRadiansToPoint(x, y)
+    const ratio = this.betaRatio(radians)
+    const rate = ratio * this.headDist() / this._time
+    const dist = sqrt(x * x + y * y)
+    const time = (rate === 0) ? Infinity : dist / rate
+    return { radians, ratio, rate, dist, time }
+  }
+
   // Returns radians clockwise from fire head to point [x,y]
   betaRadiansToPoint (x, y) { return this.betaDegreesToPoint(x, y) * pi() / 180 }
 
@@ -98,14 +108,7 @@ export class FireEllipse {
 
   betaTimeToPerim (betaRad) { return this.betaDistToPerim(betaRad) / this._time }
 
-  betaTimeToPoint (x, y) {
-    const betaRadians = this.betaRadiansToPoint(x, y)
-    const betaRatio = this.betaRatio(betaRadians)
-    const betaRate = betaRatio * this.headDist() / this._time
-    const betaDist = sqrt(x * x + y * y)
-    const betaTime = betaDist / betaRate
-    return betaTime
-  }
+  betaTimeToPoint (x, y) { return this.betaPoint(x, y).time }
 
   /**
    * Returns TRUE if point x,y is *within* this Ellipse's boundary by the buffer amount.

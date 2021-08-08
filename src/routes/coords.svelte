@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-  import { FireEllipse } from './../models/FireEllipse.js'
+  import { FireEllipse } from './../models/Geo/FireEllipse.js'
 
   const scene = {
     width: 1000, // canvas width

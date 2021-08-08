@@ -4,8 +4,8 @@
  *
  * FireEllipseMeshs are used to expand fire perimeters in the FireLandscape
  */
+import { rotatePoint } from '../Trig'
 import { FireEllipse } from './FireEllipse.js'
-import * as T from './trig.js'
 
 export class FireEllipseMesh extends FireEllipse {
   constructor (leng, wid, headingDegrees = 0, timeSinceIgnition = 1, spacing = 1, verbose = false) {
@@ -76,8 +76,8 @@ export class FireEllipseMesh extends FireEllipse {
     let t2y = p2y - this.cy()
     str += `1: line endpts translate to ${this.fmt(t1x, t1y)} and ${this.fmt(t2x, t2y)}\n`
     // 2 - Rotate
-    ;[t1x, t1y] = T.rotatePoint(t1x, t1y, 0, 0, -this.rotation())
-    ;[t2x, t2y] = T.rotatePoint(t2x, t2y, 0, 0, -this.rotation())
+    ;[t1x, t1y] = rotatePoint(t1x, t1y, 0, 0, -this.rotation())
+    ;[t2x, t2y] = rotatePoint(t2x, t2y, 0, 0, -this.rotation())
     str += `2: line endpts rotate to    ${this.fmt(t1x, t1y)} and ${this.fmt(t2x, t2y)}\n`
     // 3 - Determine intersections (may be 0, 1, or 2)
     const pts = this.ellipseLineIntersections(t1x, t1y, t2x, t2y)
@@ -86,7 +86,7 @@ export class FireEllipseMesh extends FireEllipse {
     pts.forEach(([x, y]) => {
       str += `   ${this.fmt(x, y)}`
       // 4 - Unrotate
-      ;[x, y] = T.rotatePoint(x, y, 0, 0, this.rotation())
+      ;[x, y] = rotatePoint(x, y, 0, 0, this.rotation())
       str += ` unrotates to ${this.fmt(x, y)}`
       // 5 - Translate back to ignition point
       x += this.cx()

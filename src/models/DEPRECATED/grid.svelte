@@ -66,10 +66,10 @@
 </script>
 
 <svelte:head>
-	<title>Fire Grid</title>
+	<title>Geo Grid</title>
 </svelte:head>
 
-<h5 class='mb-3'>Fire Grid Tinker Toy</h5>
+<h5 class='mb-3'>Geo Grid Tinker Toy</h5>
   <div class="row">
     <div class="col">
       <button class='btn-primary mb-3' on:click={burn}>Burn</button>

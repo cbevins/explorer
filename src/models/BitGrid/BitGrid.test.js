@@ -1,6 +1,6 @@
 import { BitGrid } from './BitGrid.js'
 
-function dec2bin (dec) { return (dec >>> 0).toString(2) }
+// function dec2bin (dec) { return (dec >>> 0).toString(2) }
 
 // Since our bit vector is stored in a single number, we simply initialize it as 0.
 // const vec = buildVector(64)

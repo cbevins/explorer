@@ -9,7 +9,7 @@ test('1: FireBehaviorProvider constructor', () => {
   console.log(str)
 
   const fireInputProvider = new FireInputProviderMock()
-  const input = fireInputProvider.getFireInput(1, 2, 3)
+  const input = fireInputProvider.getFireInput(1, 2, 3, 4) // x, y, time, duration
   expect(input.fuelModel).toEqual('124')
 
   const fire = fireBehaviorProvider.getFireBehavior(input)

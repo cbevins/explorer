@@ -20,7 +20,7 @@ export class Period {
 
   update (duration) {
     const prevEnd = this._ends
-    this._ends = this._begins + duration
+    this._ends += duration
     this._begins = prevEnd
     this._number++
     return this

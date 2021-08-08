@@ -1,6 +1,6 @@
 import { GeoFireGrid } from './GeoFireGrid.js'
 import { FireStatus } from './FireStatus.js'
-import { FireInputProviderMock } from './FireInputProviderMock.js'
+import { FireInputProviderMock } from '../FireBehavior/FireInputProviderMock.js'
 
 const west = 1000
 const east = 2000
@@ -83,6 +83,22 @@ test('4: GeoFireGrid.ignite()', () => {
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
 
+  // Check the unburnable row and column indices
+  expect(gf.xCol(1000)).toEqual(0)
+  expect(gf.xCol(1009.999)).toEqual(0)
+  expect(gf.xCol(1010)).toEqual(1)
+  expect(gf.xCol(1250)).toEqual(25)
+  expect(gf.xCol(1500)).toEqual(50)
+  expect(gf.xCol(1750)).toEqual(75)
+  expect(gf.xCol(2000)).toEqual(100)
+
+  expect(gf.yRow(4000)).toEqual(100)
+  expect(gf.yRow(4250)).toEqual(75)
+  expect(gf.yRow(4490)).toEqual(51)
+  expect(gf.yRow(4500)).toEqual(50)
+  expect(gf.yRow(4750)).toEqual(25)
+  expect(gf.yRow(5000)).toEqual(0)
+
   gf.period().update(10)
   expect(gf.get(1500, 4500)).toEqual(FireStatus.Unburned)
   expect(gf.isUnburnedAt(1500, 4500, 0)).toEqual(true)
@@ -144,7 +160,8 @@ const mockFire = {
   }
 }
 
-test('5: GeoFireGrid.burn()', () => {
+test('5: GeoFireGrid.burnForPeriod()', () => {
+  console.log('Test started at --------------------------------------------------------------', Date.now())
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750
@@ -158,8 +175,12 @@ test('5: GeoFireGrid.burn()', () => {
   expect(ignPoints.size).toEqual(1)
 
   // start a new burning period
-  gf.period().update(2)
-  gf.burn()
+  gf.burnForPeriod(2)
+  expect(gf.get(1510, 4500)).toEqual(1.596939267364341)
+  expect(gf.status(1510, 4500)).toEqual(1.596939267364341)
   // ignPoints = gf.ignitionPointsAt(1)
   // expect(ignPoints.size).toEqual(1)
+  for (let p = 1; p < 30; p++) {
+    gf.burnForPeriod(2)
+  }
 })

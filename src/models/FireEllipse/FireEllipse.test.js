@@ -1,5 +1,5 @@
 import { FireEllipse, createFireEllipse } from './FireEllipse.js'
-import * as T from './trig.js'
+import { caz2rot, cos, pi, sin } from '../Trig'
 
 const headRos = 93.3012701892219
 const length = 100
@@ -77,15 +77,15 @@ test('4: FireEllipse.containsPoint()', () => {
   let rot = 0
   expect(fe90._rot).toEqual(rot)
   // Center point rotation
-  let cx = T.cos(rot) * (50 - back)
-  let cy = T.sin(rot) * (50 - back)
+  let cx = cos(rot) * (50 - back)
+  let cy = sin(rot) * (50 - back)
   expect(fe90.cx()).toEqual(50 - back)
   expect(fe90.cx()).toEqual(cx)
   expect(fe90.cy()).toEqual(0)
   expect(fe90.cy()).toEqual(cy)
   // Head rotation
-  let hx = T.cos(rot) * head
-  let hy = T.sin(rot) * head
+  let hx = cos(rot) * head
+  let hy = sin(rot) * head
   expect(fe90.hx()).toEqual(head)
   expect(fe90.hx()).toEqual(hx)
   expect(fe90.hy()).toEqual(0)
@@ -97,26 +97,26 @@ test('4: FireEllipse.containsPoint()', () => {
   expect(fe90.containsPoint(head + 1, 0)).toEqual(false)
   expect(fe90.containsPoint(-back - 1, 0)).toEqual(false)
 
-  expect(T.caz2rot(fe1.headDegrees())).toEqual(315) // head at 135 is rot -45 or 315
-  rot = 315 * T.pi() / 180
+  expect(caz2rot(fe1.headDegrees())).toEqual(315) // head at 135 is rot -45 or 315
+  rot = 315 * pi() / 180
   expect(fe1._rot).toEqual(rot)
 
-  cx = T.cos(rot) * (50 - back)
-  cy = T.sin(rot) * (50 - back)
+  cx = cos(rot) * (50 - back)
+  cy = sin(rot) * (50 - back)
   expect(fe1.cx()).toBeCloseTo(cx)
   expect(fe1.cx()).toBeCloseTo(30.618621784789717, 12)
   expect(fe1.cy()).toBeCloseTo(cy)
   expect(fe1.cy()).toBeCloseTo(-30.618621784789717, 12)
 
-  hx = T.cos(rot) * head
-  hy = T.sin(rot) * head
+  hx = cos(rot) * head
+  hy = sin(rot) * head
   expect(hx).toBeCloseTo(65.97396084411709, 12)
   expect(hy).toBeCloseTo(-65.97396084411712, 12)
   expect(fe1.hx()).toEqual(hx)
   expect(fe1.hy()).toEqual(hy)
 
-  const bx = T.cos(rot) * back
-  const by = T.sin(rot) * back
+  const bx = cos(rot) * back
+  const by = sin(rot) * back
   expect(bx).toBeCloseTo(4.73671727453765, 12)
   expect(by).toBeCloseTo(-4.73671727453765, 12)
 
@@ -239,20 +239,21 @@ function demoListBeta () {
     const dist = fe1.betaDistToPerim(rad)
     const rate = fe1.betaRate(rad)
 
-    const x = dist * T.cos(fe1._rot)
-    const y = dist * T.sin(fe1._rot)
+    const x = dist * cos(fe1._rot)
+    const y = dist * sin(fe1._rot)
     str += `${fmt(deg, 3, 0)} ${fmt(rad, 8, 4)} ${fmt(ratio, 6, 4)} ${fmt(dist, 8, 4)} ${fmt(rate, 8, 4)} ${fmt(x, 8, 4)}, ${fmt(y, 8, 4)}\n`
   }
   console.log(str)
   console.log('head at', fe1.head(), 'back at', fe1.back())
 }
 
-function demoPlotFireEllipse () {
+function asciiPlotFireEllipse () {
   const spacing = 5
   const dmax = Math.ceil(fe1.headDist() / spacing)
   const dmin = -Math.floor(-fe1.backDist() / spacing)
-  console.log('dmax', dmax, 'dmin', dmin)
-  let str = ''
+  expect(dmax).toEqual(19)
+  expect(dmin).toEqual(2)
+  let str = 'FireEllipse ASCII Plot\n'
   for (let row = dmax; row >= -dmax; row--) {
     const y = row * spacing
     str += `\n${y.toFixed(0).padStart(4)}: `
@@ -265,4 +266,4 @@ function demoPlotFireEllipse () {
 }
 
 // demoListBeta()
-demoPlotFireEllipse()
+asciiPlotFireEllipse()

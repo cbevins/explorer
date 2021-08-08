@@ -1,3 +1,10 @@
+/**
+ * GeoServer is an abstract class whose derived classes must implement their own
+ * get() and set() methods.
+ *
+ * GeoServer provides convenience methods for getting and setting rows, columns,
+ * and rectangles of points snapped to a GeoBounds.
+ */
 export class GeoServer {
   constructor (geoBounds, defaultValue = 0) {
     this._defaultValue = defaultValue
@@ -5,7 +12,7 @@ export class GeoServer {
   }
 
   // ---------------------------------------------------------------------------
-  // Only the fhe following accessor methods should directly access this properties.
+  // Only the the following accessor methods should directly access this properties.
   // ---------------------------------------------------------------------------
 
   bounds () { return this._geoBounds }
@@ -78,9 +85,6 @@ export class GeoServer {
   // Sets horizontal row of all inbounds west-east points to *value* and returns *this*
   setFullRow (y, value) { return this.setRect(this.bounds().west(), y, this.bounds().east(), y, value) }
 
-  // Sets horizontal row of west-east points to *value* and returns *this*
-  setRow (y, fromX, thruX, value) { return this.setRect(fromX, y, thruX, y, value) }
-
   // Sets a rectangular area of points to *value* and returns *this*
   setRect (fromX, fromY, thruX, thruY, value) {
     const x1 = Math.min(fromX, thruX)
@@ -94,4 +98,7 @@ export class GeoServer {
     }
     return this
   }
+
+  // Sets horizontal row of west-east points to *value* and returns *this*
+  setRow (y, fromX, thruX, value) { return this.setRect(fromX, y, thruX, y, value) }
 }

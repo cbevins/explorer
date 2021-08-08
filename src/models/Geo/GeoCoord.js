@@ -1,3 +1,8 @@
+/**
+ * GeoCoord represents any geographic point
+ * along an x-axis that increases from west-to-east
+ * and a y-axis that increases from south-to-north
+ */
 export class GeoCoord {
   constructor (x = 0, y = 0) {
     this._xy = [x, y]

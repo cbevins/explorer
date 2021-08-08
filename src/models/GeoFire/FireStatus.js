@@ -36,7 +36,7 @@ export class FireStatus {
   static isUnburnedAt (ignited, atTime) { return ignited === Unburned || ignited > atTime }
 
   // --------------------------------------------------------------------------------------------
-  // The following sre used by clients only when setting their point data to some FireStatus code
+  // The following are used by clients only when setting their point data to some FireStatus code
   // --------------------------------------------------------------------------------------------
 
   // Used by clients to set data to a ControlLine (Unburnable) state

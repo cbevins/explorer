@@ -1,5 +1,5 @@
-import { IgnitionGrid, North, South, East, West, Origin, Unvisited } from './IgnitionGrid.js'
-import { FireEllipse } from './FireEllipse.js'
+import { IgnitionGrid, North, NorthEast, South, SouthEast, East, SouthWest, NorthWest, West, Origin, Unvisited } from './IgnitionGrid.js'
+import { FireEllipse } from '../FireEllipse'
 import { FireStatus } from './FireStatus.js'
 import { GeoFireGrid } from './GeoFireGrid.js'
 
@@ -83,10 +83,10 @@ test('3: IgnitionGrid with unrotated FireEllipse', () => {
   expect(ig.cols()).toEqual(23)
   expect(ig.rows()).toEqual(23)
 
-  expect(ig.distTo(0, 0)).toEqual(0)
+  expect(ig.distanceTo(0, 0)).toEqual(0)
   expect(ig.timeTo(0, 0)).toEqual(0)
 
-  expect(ig.distTo(0, 10)).toEqual(10)
+  expect(ig.distanceTo(0, 10)).toEqual(10)
   expect(ig.timeTo(0, 10)).toBeCloseTo((10 / headRos), 12)
 })
 
@@ -99,38 +99,42 @@ test('4: IgnitionGrid rotated to 135 degrees', () => {
   expect(ig.cols()).toEqual(23)
   expect(ig.rows()).toEqual(23)
 
-  expect(ig.distTo(0, 0)).toEqual(0)
+  expect(ig.distanceTo(0, 0)).toEqual(0)
   expect(ig.timeTo(0, 0)).toEqual(0)
 
   const dist = Math.sqrt(100 + 100)
-  expect(ig.distTo(10, -10)).toBeCloseTo(dist)
+  expect(ig.distanceTo(10, -10)).toBeCloseTo(dist)
   expect(ig.timeTo(10, -10)).toBeCloseTo((dist / headRos), 12)
   // console.log(ig.get(60, -60))
   expect(ig.get(60, -60)).toEqual({
     dist: 84.8528137423857,
     time: 0.9094497167112289,
-    from: 5, // Unvisited
-    towards: 5 // Unvisited
+    source: 9, // Unvisited
+    towards: 9 // Unvisited
   })
 })
 
-test('5: IgnitionGrid.setFrom(), neighboringPoint()', () => {
+test('5: IgnitionGrid.setSource(), neighboringPoint()', () => {
   const ig = new IgnitionGrid(fireGrid, fireEllipse)
-  expect(ig.get(0, 0).from).toEqual(Unvisited)
-  ig.setFrom(0, 0, Origin)
-  expect(ig.get(0, 0).from).toEqual(Origin)
+  expect(ig.get(0, 0).source).toEqual(Unvisited)
+  ig.setSource(0, 0, Origin)
+  expect(ig.get(0, 0).source).toEqual(Origin)
 
   expect(ig.neighboringPoint(0, 0, North)).toEqual([0, 10])
+  expect(ig.neighboringPoint(0, 0, NorthEast)).toEqual([10, 10])
+  expect(ig.neighboringPoint(0, 0, NorthWest)).toEqual([-10, 10])
   expect(ig.neighboringPoint(0, 0, South)).toEqual([0, -10])
+  expect(ig.neighboringPoint(0, 0, SouthEast)).toEqual([10, -10])
+  expect(ig.neighboringPoint(0, 0, SouthWest)).toEqual([-10, -10])
   expect(ig.neighboringPoint(0, 0, East)).toEqual([10, 0])
   expect(ig.neighboringPoint(0, 0, West)).toEqual([-10, 0])
 })
 
 test('6: IgnitionGrid.walk()', () => {
   const ig = new IgnitionGrid(fireGrid, fireEllipse)
-  expect(ig.get(0, 0).from).toEqual(Unvisited)
-  ig.setFrom(0, 0, Origin)
-  expect(ig.get(0, 0).from).toEqual(Origin)
+  expect(ig.get(0, 0).source).toEqual(Unvisited)
+  ig.setSource(0, 0, Origin)
+  expect(ig.get(0, 0).source).toEqual(Origin)
 
   fireGrid.period().update(1)
   ig.walk(1500, 4500, 0, fireGrid.period())
