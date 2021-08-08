@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte'
   import { GeoFireGrid } from '../models/Geo/GeoFireGrid.js'
   import { FireInputProviderMock } from '../models/Geo/FireInputProviderMock.js'
-  import { FireStatus } from '../models/Geo/FireStatus.js'
+  import { FireStatus } from '../models/GeoFire/FireStatus.js'
 
   // Create a GeoFireGrid instance 1000 ft west-to-east and 1000 ft north-to-south with 10-ft spacing
   let west = 1000

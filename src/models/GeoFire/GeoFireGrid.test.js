@@ -129,6 +129,7 @@ test('4: GeoFireGrid.ignite()', () => {
   })
 })
 
+// eslint-disable-next-line no-unused-vars
 const mockFire = {
   lwr: 3.575543332181236,
   backDist: 1.0258645045017885,
