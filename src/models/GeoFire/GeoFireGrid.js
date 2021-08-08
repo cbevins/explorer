@@ -7,10 +7,11 @@ export class GeoFireGrid extends GeoServerGrid {
   constructor (west, north, east, south, xspacing, yspacing, fireInputProvider) {
     const bounds = new GeoBounds(west, north, east, south, xspacing, yspacing)
     super(bounds, FireStatus.Unburned)
+    this._fireInput = {} // current ignition point's fire input parameters
     this._fireInputProvider = fireInputProvider
     this._ignitionGridProvider = new IgnitionGridProvider()
+    this._ignGrid = null // current ignition point's IgnitionGrid
     this._ignSet = new Set() // Set of ignition GeoCoords to start each burning period
-    this._ign = new GeoCoord(0, 0) // current ignition point [x, y]
     // NOTE that *begins* IS WITHIN the period, while *ends* is NOT WITHIN the period
     this._period = new Period()
     this._burnedPts = 0
@@ -44,22 +45,28 @@ export class GeoFireGrid extends GeoServerGrid {
       // str += `    Ignition Point [${ignPt.x()}, ${ignPt.y()}], ignited at time ${ignPt.time()}`
 
       // Get fire behavior inputs at this ignition point and time
-      const fireInput = this._fireInputProvider.getFireInput(
+      this._fireInput = this._fireInputProvider.getFireInput(
         ignPt.x(), ignPt.y(), this.period().begins(), this.period().duration())
 
       // Get an IgnitionGrid distance-time overlay for these fire behavior conditions
-      const ignGrid = this._ignitionGridProvider.getIgnitionGrid(this, fireInput)
+      this._ignGrid = this._ignitionGridProvider.getIgnitionGrid(this, this._fireInput)
 
       // Overlay the IgnitionGrid on this ignition point,
       // and flood fill neighboring point ignition times accounting for unburnables
-      ignGrid.walk(ignPt.x(), ignPt.y(), ignPt.time(), this.period())
-      ignited += ignGrid._walk.ignited
+      this._ignGrid.walk(ignPt.x(), ignPt.y(), ignPt.time(), this.period())
+      ignited += this._ignGrid._walk.ignited
     })
     this._burnedPts += ignited
     // str += `, ignited ${ignited} pts, ends with ${this._burnedPts} burned pts\n`
     // console.log(str)
     return true
   }
+
+  // Returns reference to the FireEllipse used by the IgnitionGrid for the current ignition point
+  fireEllipse () { return this._ignGrid._ellipse }
+
+  // Returns reference to the fire input object used by IgnitionGrid for the current ignition point
+  fireInput () { return this._fireInput }
 
   /**
    * Ignites the point [x, y] at time *t*, IFF it is Unburned
@@ -74,6 +81,10 @@ export class GeoFireGrid extends GeoServerGrid {
     return this
   }
 
+  // Returns reference to the IgnitionGrid for the current ignition point
+  ignitionGrid () { return this._ignGrid }
+
+  // Returns the number of ignition points for the current period
   ignitionPoints () { return this._ignSet.size }
 
   // Returns an Set of *IgnitionPoints*, ignited or previously burned points
@@ -136,8 +147,9 @@ export class GeoFireGrid extends GeoServerGrid {
   reset () {
     this.fill(FireStatus.Unburned)
     this._burnedPts = 0
+    this._fireInput = {} // current ignition point's fire input parameters
     this._period = new Period() // NOTE that *begins* IS WITHIN the period, while *ends* is NOT WITHIN the period
-    this._ign = new GeoCoord(0, 0) // current ignition point [x, y]
+    this._ignGrid = null // current ignition point's IgnitionGrid
     this._ignSet = new Set()
     return this
   }
