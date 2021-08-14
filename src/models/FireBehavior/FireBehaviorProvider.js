@@ -1,7 +1,9 @@
+import { FireBehaviorProviderInterface } from './FireBehaviorProviderInterface.js'
 import { Sim } from './fire-behavior-simulator.js'
 
-export class FireBehaviorProvider {
+export class FireBehaviorProvider extends FireBehaviorProviderInterface {
   constructor () {
+    super()
     const sim = new Sim()
     const dag = sim.createDag('FireGrid')
     dag.select([

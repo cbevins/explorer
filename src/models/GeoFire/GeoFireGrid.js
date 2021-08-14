@@ -1,5 +1,5 @@
 import { FireStatus } from './FireStatus.js'
-import { GeoBounds, GeoCoord, GeoServerGrid, GeoTime } from '../Geo'
+import { GeoBounds, GeoServerGrid, GeoTime } from '../Geo'
 import { IgnitionGridProvider } from './IgnitionGridProvider.js'
 import { Period } from './Period.js'
 

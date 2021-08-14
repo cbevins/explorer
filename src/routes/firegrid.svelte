@@ -25,19 +25,22 @@
   let ignT = 0
 
   // Burning period duration and maximum burning periods
-  let periodDuration = 1 // minutes
+  let periodDuration = 2 // minutes
   let periodMax = 24 * 60 // 24 hours
+  let fireLength, fireWidth, fireHeadRos, fireBackRos, fireLwr, fireHeading, elapsedTime = 0
+  let fireCx, fireCy, fireHx, fireHy, fireBx, fireBy, fireArea, firePerimeter
 
   // Burning stats
   let summary = []
+  let ellipse = []
   let running = true
 
   // Here are some named patterns of unburnable points: TRUE imnplements it, FALSE ignores it
   let pattern = {
     shortCol: false,
     shortRow: false,
-    colHole: true,
-    roads: true
+    colHole: false,
+    roads: false
   }
 
   // These properties are set by onMount():
@@ -48,7 +51,8 @@
   // Runs GeoFireGrid simulation for 1 burning period
   function burn () {
     fireGrid.burnForPeriod(periodDuration)
-    draw()
+    drawFireGrid()
+    drawFireEllipse()
   }
 
   function loop(t) {
@@ -57,8 +61,74 @@
     burn()
   }
 
-  // Updates the GeoFireGrid displai
-  function draw() {
+  // Draws the free-burning geometrical ellipse based on FireEllipse length and width
+  function drawFireEllipse () {
+    // THIS ALL ASSUMES *NO* SPATIAL AND TEMPORALY VARIABILITY
+    const fe = fireGrid.fireEllipse()
+    elapsedTime += periodDuration
+    fireHeadRos = fe.headRate()
+    fireBackRos = fe.backRate()
+    fireLwr = fe.lwr()
+    fireLength = (fireHeadRos + fireBackRos) * fireGrid.period().ends()
+    fireWidth = fireLength / fireLwr
+    fireHeading = fe.headDegrees()
+    const period = fireGrid.period().number()
+    fireCx = fe.cx() * period
+    fireCy = fe.cy() * period
+    fireHx = fe.hx() * period
+    fireHy = fe.hy() * period
+    fireBx = fe.bx() * period
+    fireBy = fe.by() * period
+    fireArea = Math.PI * fireLength * fireLength / (4 * fireLwr)
+    firePerimeter = perimeter(fireLength, fireWidth)
+
+    // Free burning geometrical ellipse
+    ctx.beginPath()
+    ctx.strokeStyle = 'blue'
+    ctx.lineWidth = 5
+    const cx = ignX - west + fireCx // center x: ignition easting plus center easting
+    const cy = north - ignY - fireCy // center y: ignition northing less center northing
+    const rx = fireLength / 2
+    const ry = fireWidth / 2
+    const rad = ((fireHeading + 270) % 360) * Math.PI / 180
+    ctx.ellipse(cx, cy, rx, ry, rad, 0, 2 * Math.PI)
+    ctx.stroke()
+
+    const r = 10
+    // Fire head location
+    const hx = ignX - west + fireHx
+    const hy = north - ignY - fireHy
+    ctx.beginPath()
+    ctx.ellipse(hx, hy, 2*r, 2*r, 0, 0, 2 * Math.PI)
+    ctx.stroke()
+
+    // Fire back location
+    const bx = ignX - west + fireBx
+    const by = north - ignY - fireBy
+    ctx.beginPath()
+    ctx.ellipse(bx, by, 2*r, 2*r, 0, 0, 2 * Math.PI)
+    ctx.stroke()
+
+    const e = []
+    e.push(['Elapsed Time', elapsedTime.toFixed(0)])
+    e.push(['Head RoS', fireHeadRos.toFixed(2)])
+    e.push(['Back RoS', fireBackRos.toFixed(2)])
+    e.push(['Fire Length', fireLength.toFixed(2)])
+    e.push(['Fire Width', fireWidth.toFixed(2)])
+    e.push(['Fire Heading', fireHeading.toFixed(2)])
+    e.push(['Fire Area', fireArea.toFixed(0)])
+    e.push(['Fire Perimeter', firePerimeter.toFixed(0)])
+    e.push(['Fire Center X', fireCx.toFixed(2)])
+    e.push(['Fire Center Y', fireCy.toFixed(2)])
+    e.push(['Fire Head X', fireHx.toFixed(2)])
+    e.push(['Fire Head Y', fireHy.toFixed(2)])
+    e.push(['Fire Back X', fireBx.toFixed(2)])
+    e.push(['Fire Back Y', fireBy.toFixed(2)])
+    ellipse = e
+  }
+
+  // Updates the GeoFireGrid display
+  function drawFireGrid() {
     ctx.lineWidth = 1
     let current = 0
     let previous = 0
@@ -89,6 +159,7 @@
         ctx.fillRect(col*xdist, row*ydist, xdist, ydist)
       }
     }
+
     const d = []
     d.push(['Period Number', fireGrid.period().number()])
     d.push(['Period Begins', fireGrid.period().begins()])
@@ -111,12 +182,39 @@
     reset()
 	})
 
+  function perimeter(len, wid) {
+    const a = 0.5 * len
+    const b = 0.5 * wid
+    const xm = a + b <= 0 ? 0 : (a - b) / (a + b)
+    const xk = 1 + xm * xm / 4 + xm * xm * xm * xm / 64
+    return Math.PI * (a + b) * xk
+  }
+
   // Reset button callback: resets the GeoFireGrid back to original state
   function reset () {
     fireGrid.reset()
+    resetFireEllipseStatus()
     setUnburnablePattern(pattern)
     fireGrid.igniteAt(ignX, ignY, ignT)
-    draw()
+    drawFireGrid()
+  }
+
+  function resetFireEllipseStatus () {
+    fireLength= 0
+    fireWidth = 0
+    fireHeadRos = 0
+    fireBackRos = 0
+    fireLwr = 0
+    fireHeading = 0
+    fireCx = 0
+    fireCy = 0
+    fireHx = 0
+    fireHy = 0
+    fireBx = 0
+    fireBy = 0
+    fireArea = 0
+    firePerimeter = 0
+    elapsedTime = 0
   }
 
   // 'Run/Pause' button callback: starts, pauses, and resumes simulation
@@ -178,9 +276,12 @@
       <div class="row">
         <SimpleTable title='Burn Status' data={summary} id='geoFireGridSummary' />
       </div>
+      <div class="row">
+        <SimpleTable title='Fire Ellipse' data={ellipse} id='geoFireGridEllipse' />
+      </div>
     </div>
 
-    <div class="col-9">
+    <div class="col-8">
       <canvas bind:this={canvas} width={width} height={height}></canvas>
     </div>
   </div>

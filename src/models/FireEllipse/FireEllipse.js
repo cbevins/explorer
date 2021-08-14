@@ -42,6 +42,7 @@ export class FireEllipse {
   }
 
   a () { return this._a } // major axis radius
+  area () { return Math.PI * this.length() * this.length() / (4 * this.lwr()) }
   b () { return this._b } // minor axis radius
   back () { return this._back } // fire back [x,y] coordinate pair array
   backDist () { return this._g } // backing distance from ignition point

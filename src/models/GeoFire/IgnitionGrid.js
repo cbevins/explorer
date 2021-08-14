@@ -15,6 +15,8 @@ export const oppositeDir = [South, SouthWest, West, NorthWest, North, NorthEast,
 export const Unvisited = 9
 export const DirAbbr = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'O', 'UV']
 export const DirName = ['North', 'NorthEast', 'East', 'SouthEast', 'South', 'SouthWest', 'West', 'NorthWest', 'Origin', 'Unvisited']
+const FourWays = [North, East, South, West]
+const EightWays = [North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest]
 
 class Location {
   constructor (dist, time, source, towards) {
@@ -219,8 +221,6 @@ export class IgnitionGrid extends GeoServerGrid {
 
     this.initUnvisited()
     this.setSource(0, 0, Origin)
-    ;[North, East, South, West].forEach(towards => {
-      this.traverse(0, 0, towards, 0)
-    })
+    EightWays.forEach(towards => { this.traverse(0, 0, towards, 0) })
   }
 }
