@@ -94,20 +94,9 @@
     ctx.ellipse(cx, cy, rx, ry, rad, 0, 2 * Math.PI)
     ctx.stroke()
 
-    const r = 10
-    // Fire head location
-    const hx = ignX - west + fireHx
-    const hy = north - ignY - fireHy
-    ctx.beginPath()
-    ctx.ellipse(hx, hy, 2*r, 2*r, 0, 0, 2 * Math.PI)
-    ctx.stroke()
-
-    // Fire back location
-    const bx = ignX - west + fireBx
-    const by = north - ignY - fireBy
-    ctx.beginPath()
-    ctx.ellipse(bx, by, 2*r, 2*r, 0, 0, 2 * Math.PI)
-    ctx.stroke()
+    drawFirePointBack()
+    drawFirePointHead()
+    drawFirePointIgnition()
 
     const e = []
     e.push(['Elapsed Time', elapsedTime.toFixed(0)])
@@ -159,7 +148,6 @@
         ctx.fillRect(col*xdist, row*ydist, xdist, ydist)
       }
     }
-
     const d = []
     d.push(['Period Number', fireGrid.period().number()])
     d.push(['Period Begins', fireGrid.period().begins()])
@@ -175,6 +163,16 @@
       cancelAnimationFrame(frame)
     }
   }
+
+  function drawFirePoint (x, y, color = 'blue', radius = 10) {
+    ctx.strokeStyle = color
+    ctx.beginPath()
+    ctx.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI)
+    ctx.stroke()
+  }
+  function drawFirePointBack () { drawFirePoint((ignX - west + fireBx), (north - ignY - fireBy)) }
+  function drawFirePointHead () { drawFirePoint((ignX - west + fireHx), (north - ignY - fireHy))}
+  function drawFirePointIgnition () { drawFirePoint((ignX - west), (north - ignY)) }
 
   // Gets canvas and context once they are mounted
 	onMount(() => {
@@ -258,35 +256,35 @@
 </svelte:head>
 
 <h5 class='mb-3'>GeoFireGrid Tinker Toy</h5>
-  <div class="row">
-    <div class="col">
-      <!-- Button row -->
-      <div class="row">
-        <div class="col">
-          <button class='btn-primary mb-3' on:click={step}>Step</button>
-        </div>
-        <div class="col">
-          <button class='btn-primary mb-3' on:click={run}>{running?'Run':'Pause'}</button>
-        </div>
-        <div class="col">
-          <button class='btn-primary mb-3' on:click={reset}>Reset</button>
-        </div>
+<div class="row">
+  <div class="col">
+    <!-- Button row -->
+    <div class="row">
+      <div class="col">
+        <button class='btn-primary mb-3' on:click={step}>Step</button>
       </div>
-      <!-- Burn status table -->
-      <div class="row">
-        <SimpleTable title='Burn Status' data={summary} id='geoFireGridSummary' />
+      <div class="col">
+        <button class='btn-primary mb-3' on:click={run}>{running?'Run':'Pause'}</button>
       </div>
-      <div class="row">
-        <SimpleTable title='Fire Ellipse' data={ellipse} id='geoFireGridEllipse' />
+      <div class="col">
+        <button class='btn-primary mb-3' on:click={reset}>Reset</button>
       </div>
     </div>
-
-    <div class="col-8">
-      <canvas bind:this={canvas} width={width} height={height}></canvas>
+    <!-- Burn status table -->
+    <div class="row">
+      <SimpleTable title='Burn Status' data={summary} id='geoFireGridSummary' />
+    </div>
+    <div class="row">
+      <SimpleTable title='Fire Ellipse' data={ellipse} id='geoFireGridEllipse' />
     </div>
   </div>
 
-  <style>
+  <div class="col-8">
+    <canvas bind:this={canvas} width={width} height={height}></canvas>
+  </div>
+</div>
+
+<style>
 	canvas {
 		width: 100%;
 		height: 100%;
