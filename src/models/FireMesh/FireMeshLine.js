@@ -15,7 +15,7 @@ export class FireMeshLine {
 
   isBurnedAt (position) { return FireMeshCode.isBurned(this._codeAt(position)) }
 
-  isUnburnableAt (position) { return FireMeshCode.isUnburnabled(this._codeAt(position)) }
+  isUnburnableAt (position) { return FireMeshCode.isUnburnable(this._codeAt(position)) }
 
   isUnburnedAt (position) { return FireMeshCode.isUnburned(this._codeAt(position)) }
 
@@ -64,4 +64,7 @@ export class FireMeshLine {
     this._segments.push(new FireMeshSegment(position, position))
     return true
   }
+
+  // Combines connected FireMeshSegments of the same code to reduce array size
+  merge () {}
 }

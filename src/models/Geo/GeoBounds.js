@@ -99,4 +99,27 @@ export class GeoBounds {
 
   // Returns the y-spacing interval (base 0) containing y (i.e., row index from north)
   yInterval (y) { return Math.floor((this.north() - y) / this.ySpacing()) }
+
+  // Returns array of all x tics crossed when traversing from x0 to x1
+  xCrossings (x0, x1) { return this.crossings(x0, x1, this.xSpacing()) }
+
+  // Returns array of all y tics crossed when traversing from y0 to y1
+  yCrossings (y0, y1) { return this.crossings(y0, y1, this.ySpacing()) }
+
+  crossings (p0, p1, spacing) {
+    const xings = []
+    let first
+    if (p0 < p1) { // traversing west-to-east OR south-to-north
+    // if already ON the line, then it is NOT traversed
+    // So if p=100 and spacing=10, first traversed first tic is 110
+      first = spacing * (Math.floor(p0 / spacing) + 1) // first tic traversed to the east or north
+      for (let p = first; p <= p1; p += spacing) { xings.push(p) }
+    } else { // traversing east-to-west or north-to-south
+    // If already ON the line, then it is NOT traversed
+    // So if p=100 and spacing=10, first traversed tic is 90
+      first = spacing * (Math.ceil(p0 / spacing) - 1) // first tic traversed to the west or south
+      for (let p = first; p >= p1; p -= spacing) { xings.push(p) }
+    }
+    return xings
+  }
 }

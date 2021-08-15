@@ -16,6 +16,7 @@ export class FireMesh {
     for (let y = bounds.north(); y >= bounds.south(); y -= bounds.ySpacing()) {
       this._horz.push(new FireMeshLine(y))
     }
+    this._ignitions = [] // Newly ignited points during burnForPeriod()
     this._period = new Period()
     this._vert = []
     for (let x = bounds.west(); x <= bounds.east(); x += bounds.xSpacing()) {
@@ -68,19 +69,80 @@ export class FireMesh {
     this.period().update(duration)
 
     // Expand the endpoints of every Burned FireMeshSegment
+    this._ignitions = []
+    let input, fire, before, distance, crossings
+
     this._horz.forEach((line, lidx) => {
       const y = line.anchor()
       line.segments().forEach((segment, sidx) => {
         if (segment.isBurned()) {
-          const input0 = this._fireInputProvider.get(segment.begins(), y, this.period().begins(), duration)
-          const fire0 = this._fireInputProvider.getFireBehavior(input0)
-          const input1 = this._fireInputProvider.get(segment.ends(), y, this.period().begins(), duration)
-          const fire1 = this._fireInputProvider.getFireBehavior(input1)
+          // Beginning point is moved a negative amount
+          input = this._fireInputProvider.getFireInput(segment.begins(), y, this.period().begins(), duration)
+          fire = this._fireBehaviorProvider.getFireBehavior(input)
+          distance = fire.ros.west * duration
+          // If not the first segment, ensure distance will not overlap the previous segment
+          if (sidx > 0) {
+            distance = Math.min(distance, (segment.begins() - line.segment(sidx - 1).ends()))
+          }
+          before = segment.begins()
+          segment.moveBegins(-distance)
+          // Spawn ignitions for all vertical lines crossed by this extension
+          crossings = this.bounds().xCrossings(before, segment.begins())
+          crossings.forEach(x => { this._ignitions.push([x, y]) })
+
+          // End point is moved a positive amount
+          input = this._fireInputProvider.getFireInput(segment.ends(), y, this.period().begins(), duration)
+          fire = this._fireBehaviorProvider.getFireBehavior(input)
+          distance = fire.ros.east * duration
+          // If not the last segment, ensure distance will not overlap the next segment
+          if (sidx < line.segments().length - 1) {
+            distance = Math.min(distance, (line.segment(sidx + 1).begins() - segment.ends()))
+          }
+          before = segment.ends()
+          segment.moveEnds(distance)
+          // Spawn ignitions for all vertical lines crossed by this extension
+          crossings = this.bounds().xCrossings(before, segment.ends())
+          crossings.forEach(x => { this._ignitions.push([x, y]) })
         }
       })
     })
+
+    this._vert.forEach((line, lidx) => {
+      const x = line.anchor()
+      line.segments().forEach((segment, sidx) => {
+        if (segment.isBurned()) {
+          // Beginning point is moved a negative amount
+          input = this._fireInputProvider.getFireInput(x, segment.begins(), this.period().begins(), duration)
+          fire = this._fireBehaviorProvider.getFireBehavior(input)
+          distance = fire.ros.south * duration
+          // If not the first segment, ensure distance will not overlap the previous segment
+          if (sidx > 0) {
+            distance = Math.min(distance, (segment.begins() - line.segment(sidx - 1).ends()))
+          }
+          before = segment.begins()
+          segment.moveBegins(-distance)
+          // Spawn ignitions for all horizontal lines crossed by this extension
+          crossings = this.bounds().yCrossings(before, segment.begins())
+          crossings.forEach(y => { this._ignitions.push([x, y]) })
+
+          // End point is moved a positive amount
+          input = this._fireInputProvider.getFireInput(x, segment.ends(), this.period().begins(), duration)
+          fire = this._fireBehaviorProvider.getFireBehavior(input)
+          distance = fire.ros.north * duration
+          // If not the last segment, ensure distance will not overlap the next segment
+          if (sidx < line.segments().length - 1) {
+            distance = Math.min(distance, (line.segment(sidx + 1).begins() - segment.ends()))
+          }
+          before = segment.ends()
+          segment.moveEnds(distance)
+          // Spawn ignitions for all horizontal lines crossed by this extension
+          crossings = this.bounds().yCrossings(before, segment.ends())
+          crossings.forEach(y => { this._ignitions.push([x, y]) })
+        }
+      })
+    })
+    return this
   }
 
-  igniteAt (x, y) {
-  }
+  igniteAt (x, y) { return this.horzLineAt(y).igniteAt(x) && this.vertLineAt(x).igniteAt(y) }
 }

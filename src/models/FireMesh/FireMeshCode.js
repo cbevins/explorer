@@ -1,6 +1,6 @@
 export class FireMeshCode {
   static isBurned (code) { return code > 0 }
-  static isUnburnabled (code) { return code < 0 }
+  static isUnburnable (code) { return code < 0 }
   static isUnburned (code) { return code === 0 }
 
   static unburnable () { return -1 }

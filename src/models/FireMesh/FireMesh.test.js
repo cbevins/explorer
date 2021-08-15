@@ -37,7 +37,7 @@ test('2: GeoBounds snapX(), snapY(), xInterval(), yInterval()', () => {
   expect(bounds.yInterval(bounds.south())).toEqual(2000)
 })
 
-test('3: FireMesh horzIdxAt(), vertIdxAt()', () => {
+test('3: FireMesh horzIdxAt(), horzLineAt(), vertIdxAt(), vertLineAt()', () => {
   const mesh = new FireMesh(bounds, fireInputProvider, fireBehaviorProvider)
   expect(mesh.horzIdxAt(bounds.north())).toEqual(0)
   expect(mesh.horzIdxAt(bounds.south())).toEqual(2000)
@@ -55,4 +55,48 @@ test('3: FireMesh horzIdxAt(), vertIdxAt()', () => {
 
   const hline = mesh.horzLineAt(4000)
   expect(hline.anchor()).toEqual(4000)
+  expect(mesh.horzLineAt(4500).anchor()).toEqual(4500)
+  expect(mesh.vertLineAt(1500).anchor()).toEqual(1500)
+})
+
+test('4: FireMesh igniteAt()', () => {
+  const mesh = new FireMesh(bounds, fireInputProvider, fireBehaviorProvider)
+  expect(mesh.horzLineAt(4500).segments().length).toEqual(0)
+  expect(mesh.vertLineAt(1500).segments().length).toEqual(0)
+
+  expect(mesh.igniteAt(1500, 4500)).toEqual(true)
+  expect(mesh.horzLineAt(4500).segments().length).toEqual(1)
+  expect(mesh.vertLineAt(1500).segments().length).toEqual(1)
+  expect(mesh.igniteAt(1500, 4500)).toEqual(false)
+})
+
+// ------------------------------------------------------------------------------------
+const ros = {
+  east: 6.2619789019932,
+  southeast: 50.38808570081844,
+  south: 6.2619789019932,
+  southwest: 2.010790782028448,
+  west: 1.1976913737873367,
+  northwest: 1.0258645045017885,
+  north: 1.1976913737873367,
+  northeast: 2.010790782028448
+}
+
+test('5: FireMesh burnForPeriod()', () => {
+  const mesh = new FireMesh(bounds, fireInputProvider, fireBehaviorProvider)
+  expect(mesh.igniteAt(1500, 4500)).toEqual(true)
+  expect(mesh.horzLineAt(4500).segments().length).toEqual(1)
+  expect(mesh.horzLineAt(4500).segment(0).begins()).toEqual(1500)
+  expect(mesh.horzLineAt(4500).segment(0).ends()).toEqual(1500)
+  expect(mesh.vertLineAt(1500).segments().length).toEqual(1)
+  expect(mesh.vertLineAt(1500).segment(0).begins()).toEqual(4500)
+  expect(mesh.vertLineAt(1500).segment(0).ends()).toEqual(4500)
+
+  const duration = 1
+  mesh.burnForPeriod(duration)
+  expect(mesh.horzLineAt(4500).segment(0).begins()).toEqual(1500 - ros.west * duration)
+  expect(mesh.horzLineAt(4500).segment(0).ends()).toEqual(1500 + ros.east * duration)
+  expect(mesh.vertLineAt(1500).segment(0).begins()).toEqual(4500 - ros.south * duration)
+  expect(mesh.vertLineAt(1500).segment(0).ends()).toEqual(4500 + ros.north * duration)
+  console.log(mesh._ignitions)
 })
