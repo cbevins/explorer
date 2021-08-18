@@ -47,6 +47,12 @@ export class GeoBounds {
   // Data Getters - these methods must use data accessor above
   // -----------------------------------------------------------------------------
 
+  // Returns the index of the cell containing [x, y]
+  cellIndex (x, y) { return this.xInterval(x) + this.yInterval(y) * this.cols() }
+
+  // Returns number of cells within the GeoBounds
+  cells () { return (this.cols() - 1) * (this.rows() - 1) }
+
   // Returns number of x-axis snap points
   cols () { return 1 + Math.ceil(this.width() / this.xSpacing()) }
 
