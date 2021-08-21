@@ -2,7 +2,7 @@
  * A cache of IgnitionGrid instances, which are differentiated by 4 properties of
  * heading spread rate, length-to-width ratio, heading degrees, and duration.
  */
-import { FireBehaviorProvider } from '../FireBehavior/FireBehaviorProvider.js'
+import { FireBehaviorProvider } from './FireBehaviorProvider.js'
 import { createFireEllipse } from '../FireEllipse'
 import { IgnitionGrid } from './IgnitionGrid.js'
 

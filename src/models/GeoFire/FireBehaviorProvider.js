@@ -1,4 +1,7 @@
-import { FireBehaviorProviderInterface } from './FireBehaviorProviderInterface.js'
+/**
+ * Determines all fire behavior variables required by GeoFireGrid and IgnitionGrid
+ */
+import { FireBehaviorProviderInterface } from '../FireBehavior/FireBehaviorProviderInterface.js'
 
 export class FireBehaviorProvider extends FireBehaviorProviderInterface {
   /**
@@ -19,7 +22,7 @@ export class FireBehaviorProvider extends FireBehaviorProviderInterface {
       dag.node('surface.fire.ellipse.flank.spreadRate'),
       dag.node('surface.fire.ellipse.size.area'),
       dag.node('surface.fire.ellipse.size.perimeter'),
-      dag.node('surface.fire.ellipse.size.width'),
+      dag.node('surface.fire.ellipse.size.length'),
       dag.node('surface.fire.ellipse.size.width')
     ])
     dag.configure([

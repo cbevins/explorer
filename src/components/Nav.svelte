@@ -51,11 +51,12 @@
 <nav>
 	<ul>
 		<li><a aria-current="{segment === undefined ? 'page' : undefined}" href=".">Home</a></li>
-		<li><a aria-current="{segment === 'sprite' ? 'page' : undefined}" href="sprite">Sprite</a></li>
+		<!-- <li><a aria-current="{segment === 'sprite' ? 'page' : undefined}" href="sprite">Sprite</a></li> -->
 		<li><a aria-current="{segment === 'firegrid' ? 'page' : undefined}" href="firegrid">FireGrid</a></li>
-		<li><a aria-current="{segment === 'coords' ? 'page' : undefined}" href="coords">Coords</a></li>
-		<li><a aria-current="{segment === 'canvasLogo' ? 'page' : undefined}" href="canvasLogo">CanvasLogo</a></li>
-		<li><a aria-current="{segment === 'about' ? 'page' : undefined}" href="about">About</a></li>
-		<li><a aria-current="{segment === 'releaseNotes' ? 'page' : undefined}" href="releaseNotes">Release Notes</a></li>
+		<li><a aria-current="{segment === 'geometry' ? 'page' : undefined}" href="geometry">Geometry</a></li>
+		<!-- <li><a aria-current="{segment === 'coords' ? 'page' : undefined}" href="coords">Coords</a></li> -->
+		<!-- <li><a aria-current="{segment === 'canvasLogo' ? 'page' : undefined}" href="canvasLogo">CanvasLogo</a></li> -->
+		<!-- <li><a aria-current="{segment === 'about' ? 'page' : undefined}" href="about">About</a></li> -->
+		<!-- <li><a aria-current="{segment === 'releaseNotes' ? 'page' : undefined}" href="releaseNotes">Release Notes</a></li> -->
 	</ul>
 </nav>

@@ -16,7 +16,7 @@ export class FireMeshSegment {
   ends () { return this._ends }
   isBurnable () { return this._code >= 0 }
   isBurned () { return this._code > 0 }
-  // isUnburned () { return this._code === 0 }
+  isUnburned () { return this._code === 0 }
   isUnburnable () { return this._code < 0 }
 
   // Returns TRUE if *position* is within *this* segment

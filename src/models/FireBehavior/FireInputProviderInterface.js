@@ -1,9 +1,12 @@
 /**
- * FireInputProviderInterface is the interface called by GeoFireGrid
- * to get the necessary fire behavior inputs at point [x, y] at time t.
+ * FireInputProviderInterface is a simple interface for getting the fire behavior inputs
+ * at a specific location and time.
  *
  * FireInputProviderInterface requires a single method
- *  getFireInput(x, y, t), which must return the object:
+ *  - getFireInput(x, y, t)
+ *
+ * which must return an object with all the inputs required by the client FireBehaviorProvider.
+ * The returned object will usually looks something like this:
  *  {
  *    x: GeoCoord of fire conditions point of interest,
  *    y: GeoCoord of fire conditions point of interest,

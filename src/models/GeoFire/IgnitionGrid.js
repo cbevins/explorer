@@ -15,7 +15,7 @@ export const oppositeDir = [South, SouthWest, West, NorthWest, North, NorthEast,
 export const Unvisited = 9
 export const DirAbbr = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'O', 'UV']
 export const DirName = ['North', 'NorthEast', 'East', 'SouthEast', 'South', 'SouthWest', 'West', 'NorthWest', 'Origin', 'Unvisited']
-const FourWays = [North, East, South, West]
+// const FourWays = [North, East, South, West]
 const EightWays = [North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest]
 
 class Location {
@@ -49,8 +49,9 @@ export class IgnitionGrid extends GeoServerGrid {
     super(bounds, null)
     this._ellipse = fireEllipse
     this._fireGrid = fireGrid
+    this._keepLog = false
     this._log = [] // for debugging and tracking purposes only
-    this._walk = {} // walk stats
+    this._walk = {} // walk stats (see walk() for properties)
     this.initDistTime()
   }
 
@@ -78,7 +79,7 @@ export class IgnitionGrid extends GeoServerGrid {
   // Either logs the *msg*, or returns the current log contents
   log (msg) {
     if (msg === undefined) return this._log.join('\n')
-    this._log.push(msg)
+    if (this._keepLog) this._log.push(msg)
   }
 
   // Returns the [x, y] of the [sourceX, sourceY] point's neighbor to the *towards* direction
@@ -192,7 +193,7 @@ export class IgnitionGrid extends GeoServerGrid {
     }
 
     // Continue traversal by visiting all three neighbors
-    ;[North, East, South, West].forEach(towards => {
+    EightWays.forEach(towards => {
       if (towards !== source) this.traverse(x, y, towards, depth + 1)
     })
     return true

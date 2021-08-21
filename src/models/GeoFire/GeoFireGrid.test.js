@@ -1,6 +1,6 @@
 import { GeoFireGrid } from './GeoFireGrid.js'
 import { FireStatus } from './FireStatus.js'
-import { FireInputProviderMock } from '../FireBehavior'
+import { FireInputProviderUniform } from './FireInputProviderUniform.js'
 
 const west = 1000
 const east = 2000
@@ -8,7 +8,7 @@ const north = 5000
 const south = 4000
 const xdist = 10
 const ydist = 10
-const fireInputProvider = new FireInputProviderMock()
+const fireInputProvider = new FireInputProviderUniform()
 
 test('1: GeoFireGrid constructor and accessors', () => {
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)

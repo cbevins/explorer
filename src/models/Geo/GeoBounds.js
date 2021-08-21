@@ -43,6 +43,18 @@ export class GeoBounds {
   // Returns x coordinate of western edge
   west () { return this._nw.x() }
 
+  // Returns the most commonly accessed properties as an object
+  props () {
+    return {
+      west: this.west(),
+      north: this.north(),
+      east: this.east(),
+      south: this.south(),
+      xSpacing: this.xSpacing(),
+      ySpacing: this.ySpacing()
+    }
+  }
+
   // -----------------------------------------------------------------------------
   // Data Getters - these methods must use data accessor above
   // -----------------------------------------------------------------------------

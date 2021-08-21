@@ -1,22 +1,21 @@
 <script>
 	import { onMount } from 'svelte'
-  import { FireStatus, GeoFireGrid } from '../models/GeoFire'
-  import { FireInputProviderMock } from '../models/FireBehavior'
-  import SimpleTable from '../components/SimpleTable.svelte'
+  import { FireStatus, GeoFireGrid } from '../../models/GeoFire'
+  import { FireInputProviderMock } from './FireInputProviderMock.js'
+  import SimpleTable from '../../components/SimpleTable.svelte'
 
   // Create a GeoFireGrid instance 1000 ft west-to-east and 1000 ft north-to-south with 10-ft spacing
   let west = 1000
   let east = 2000
   let north = 5000
   let south = 4000
-  let xdist = 10
-  let ydist = 10
+  let xdist = 4
+  let ydist = 4
   let width = east - west
   let height = north - south
 
   // Use a fire input provider that yields a spatially and temporally constant set of inputs
   const fireInputProvider = new FireInputProviderMock()
-
   const fireGrid = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
 
   // Ignite a single point at time 0
@@ -31,11 +30,11 @@
   let fireCx, fireCy, fireHx, fireHy, fireBx, fireBy, fireArea, firePerimeter
 
   // Burning stats
-  let summary = []
-  let ellipse = []
+  let burnSummary = []
+  let ellipseSummary = []
   let running = true
 
-  // Here are some named patterns of unburnable points: TRUE imnplements it, FALSE ignores it
+  // Here are some named patterns of unburnable points: TRUE implements it, FALSE ignores it
   let pattern = {
     shortCol: false,
     shortRow: false,
@@ -98,22 +97,34 @@
     drawFirePointHead()
     drawFirePointIgnition()
 
-    const e = []
-    e.push(['Elapsed Time', elapsedTime.toFixed(0)])
-    e.push(['Head RoS', fireHeadRos.toFixed(2)])
-    e.push(['Back RoS', fireBackRos.toFixed(2)])
-    e.push(['Fire Length', fireLength.toFixed(2)])
-    e.push(['Fire Width', fireWidth.toFixed(2)])
-    e.push(['Fire Heading', fireHeading.toFixed(2)])
-    e.push(['Fire Area', fireArea.toFixed(0)])
-    e.push(['Fire Perimeter', firePerimeter.toFixed(0)])
-    e.push(['Fire Center X', fireCx.toFixed(2)])
-    e.push(['Fire Center Y', fireCy.toFixed(2)])
-    e.push(['Fire Head X', fireHx.toFixed(2)])
-    e.push(['Fire Head Y', fireHy.toFixed(2)])
-    e.push(['Fire Back X', fireBx.toFixed(2)])
-    e.push(['Fire Back Y', fireBy.toFixed(2)])
-    ellipse = e
+
+    const [points, perim] = fireGrid.gridStatusAt(fireGrid.period().ends())
+    const faces = perim.faces // faces at start of most recent burning period
+    console.log(faces)
+
+    const estPerim = xdist * (faces[1] + 1.414 * faces[2] + (1 + 1.414) * faces[3] + 4 * faces[4])
+    const burnedCells = faces[0] + faces[1] + faces[2] + faces[3] + faces[4]
+    const estArea = burnedCells * xdist * ydist
+    ellipseSummary = [
+      ['Elapsed Time', elapsedTime.toFixed(0)],
+      ['Geometric Area', fireArea.toFixed(0)],
+      ['Expect Burned Cells', (fireArea/xdist/ydist).toFixed(0)],
+      ['Actual Burned Cells', (burnedCells).toFixed(0)],
+      ['Estimated Area', (estArea).toFixed(0)],
+      ['Geometric Perimeter', firePerimeter.toFixed(0)],
+      ['Estimated Perimeter', (estPerim).toFixed(0)],
+      // ['Head RoS', fireHeadRos.toFixed(2)],
+      // ['Back RoS', fireBackRos.toFixed(2)],
+      // ['Fire Length', fireLength.toFixed(0)],
+      // ['Fire Width', fireWidth.toFixed(0)],
+      // ['Fire Heading', fireHeading.toFixed(0)],
+    // ['Fire Center X', fireCx.toFixed(2)],
+    // ['Fire Center Y', fireCy.toFixed(2)],
+    // ['Fire Head X', fireHx.toFixed(2)],
+    // ['Fire Head Y', fireHy.toFixed(2)],
+    // ['Fire Back X', fireBx.toFixed(2)],
+    // ['Fire Back Y', fireBy.toFixed(2)]
+    ]
   }
 
   // Updates the GeoFireGrid display
@@ -148,16 +159,17 @@
         ctx.fillRect(col*xdist, row*ydist, xdist, ydist)
       }
     }
-    const d = []
-    d.push(['Period Number', fireGrid.period().number()])
-    d.push(['Period Begins', fireGrid.period().begins()])
-    d.push(['Period Ends', fireGrid.period().ends()])
-    d.push(['Ignition Points', fireGrid._ignSet.size])
-    d.push(['Newly Burned', current])
-    d.push(['Previously Burned', previous])
-    d.push(['Unburned', unburned])
-    d.push(['Unburnable', unburnable])
-    summary = d
+    burnSummary = [
+      ['Period Number', fireGrid.period().number()],
+      ['Period Begins', fireGrid.period().begins()],
+      ['Period Ends', fireGrid.period().ends()],
+      ['Ignition Points', fireGrid.ignitionPoints()],
+      ['Newly Burned', current],
+      ['Previously Burned', previous],
+      ['Total Burned', current + previous],
+      // ['Unburned', unburned])
+      // ['Unburnable', unburnable])
+    ]
 
     if (unburned === 0 || fireGrid.ignitionPoints() === 0) {
       cancelAnimationFrame(frame)
@@ -272,10 +284,10 @@
     </div>
     <!-- Burn status table -->
     <div class="row">
-      <SimpleTable title='Burn Status' data={summary} id='geoFireGridSummary' />
+      <SimpleTable title='Burn Status' data={burnSummary} id='geoFireGridSummary' />
     </div>
     <div class="row">
-      <SimpleTable title='Fire Ellipse' data={ellipse} id='geoFireGridEllipse' />
+      <SimpleTable title='Fire Ellipse' data={ellipseSummary} id='geoFireGridEllipse' />
     </div>
   </div>
 
@@ -287,7 +299,6 @@
 <style>
 	canvas {
 		width: 100%;
-		height: 100%;
     border: 1px solid black;
 		background-color: #666;
 	}
