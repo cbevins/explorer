@@ -22,7 +22,7 @@ export class FireInputProviderMock extends FireInputProviderInterface {
       liveStem: 1.5,
       slope: 0,
       aspect: 180,
-      windFrom: 342.5,
+      windFrom: 315, // 342.5,
       windSpeed: 4 * 88
     }
   }

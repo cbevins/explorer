@@ -1,6 +1,6 @@
 /* eslint-disable jest/prefer-to-have-length */
 import { expect, test } from '@jest/globals'
-import { FireMeshBehaviorProvider } from './FireMeshBehaviorProvider.js'
+import { FireMeshBehaviorProviderBetaNSEW } from './FireMeshBehaviorProviderBetaNSEW.js'
 
 function log (title, fire) { console.log(title, fire) }
 
@@ -21,7 +21,7 @@ const Input = {
   windSpeed: 10 * 88
 }
 
-const fbp = new FireMeshBehaviorProvider()
+const fbp = new FireMeshBehaviorProviderBetaNSEW()
 const dag = fbp.dag()
 
 test('1: FireMeshBehaviorProvider input requirements', () => {

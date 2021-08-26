@@ -13,6 +13,8 @@ export class FireMeshLine {
 
   anchor () { return this._anchor }
 
+  isBurnableAt (position) { return FireMeshCode.isBurnable(this._codeAt(position)) }
+
   isBurnedAt (position) { return FireMeshCode.isBurned(this._codeAt(position)) }
 
   isUnburnableAt (position) { return FireMeshCode.isUnburnable(this._codeAt(position)) }
@@ -27,15 +29,16 @@ export class FireMeshLine {
   // Private methods
   // ---------------------------------------------------------------------------
 
-  // Returns the fire segment code at position
+  // Returns the fire segment code at *position*
   _codeAt (position) {
     // Find the first segment that contains or follows *position*
     for (let idx = 0; idx < this._segments.length; idx++) {
       const segment = this._segments[idx]
-      if (segment.follows(position)) { // If segment follows, then *position* is Unburned
+      // If segment follows *position*, then position is not in ANY segment and is Unburned
+      if (segment.follows(position)) {
         return FireMeshCode.unburned()
-      } else if (segment.contains(position)) {
-        return segment.code() // *at* is inside an existing segment
+      } else if (segment.contains(position)) { // If segment contains *position*
+        return segment.code() // return the segment code (burned or unburnable)
       }
     }
     // To get here, *position* follows ALL segments, so Unburned
@@ -53,14 +56,14 @@ export class FireMeshLine {
     for (let idx = 0; idx < this._segments.length; idx++) {
       const segment = this._segments[idx]
       if (segment.follows(position)) { // segment follows, so *position* preceeds it
-        // insert new FireSegment here
+        // insert new Burned FireSegment here
         this._segments.splice(idx, 0, new FireMeshSegment(position, position))
         return true
       } else if (segment.contains(position)) {
         return false // cannot ignite an existing segment (as they are either burned or unburnable)
       }
     }
-    // If code reaches here, *position* follows ALL segments, so append a new FireMeshSegment
+    // If code reaches here, *position* follows ALL segments, so append a new Burned FireMeshSegment
     this._segments.push(new FireMeshSegment(position, position))
     return true
   }

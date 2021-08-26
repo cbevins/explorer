@@ -1,3 +1,4 @@
+/* eslint-disable brace-style */
 import { GeoBounds, GeoServerGrid } from '../Geo'
 import { FireStatus } from './FireStatus.js'
 
@@ -51,6 +52,7 @@ export class IgnitionGrid extends GeoServerGrid {
     this._fireGrid = fireGrid
     this._keepLog = false
     this._log = [] // for debugging and tracking purposes only
+    this._maxDepth = 0
     this._walk = {} // walk stats (see walk() for properties)
     this.initDistTime()
   }
@@ -82,6 +84,8 @@ export class IgnitionGrid extends GeoServerGrid {
     if (this._keepLog) this._log.push(msg)
   }
 
+  maxTraversalDepth () { return this._maxDepth }
+
   // Returns the [x, y] of the [sourceX, sourceY] point's neighbor to the *towards* direction
   neighboringPoint (sourceX, sourceY, towards) {
     if (towards === North) return [sourceX, sourceY + this.ySpacing()]
@@ -112,9 +116,10 @@ export class IgnitionGrid extends GeoServerGrid {
   towards (x, y) { return this.get(x, y).towards }
 
   // Attempts to recursively traverse the IgnitionGrid from [sourceX, sourceY] *towards* a direction
-  traverse (sourceX, sourceY, towards, depth) {
+  traverseRecursive (sourceX, sourceY, towards, depth) {
+    this._maxDepth = Math.max(depth, this._maxDepth)
     // runaway truck ramp
-    if (depth > 300) throw Error('walk() depth exceeds 300')
+    if (depth > 10000) throw Error('walk() depth exceeds 10000')
     this._walk.points.tested++
 
     // Get the neighboring point's coordinates within the IgnitionGrid
@@ -194,9 +199,104 @@ export class IgnitionGrid extends GeoServerGrid {
 
     // Continue traversal by visiting all three neighbors
     EightWays.forEach(towards => {
-      if (towards !== source) this.traverse(x, y, towards, depth + 1)
+      if (towards !== source) this.traverseRecursive(x, y, towards, depth + 1)
     })
     return true
+  }
+
+  // Attempts to recursively traverse the IgnitionGrid from [sourceX, sourceY] *towards* a direction
+  traverseStack () {
+    const stack = []
+    this._maxDepth = 0
+    EightWays.forEach(towards => { stack.push([0, 0, towards, 1]) })
+    while (stack.length) {
+      const [sourceX, sourceY, towards, depth] = stack.pop()
+      this._maxDepth = Math.max(depth, this._maxDepth)
+
+      // Get the neighboring point's coordinates within the IgnitionGrid
+      const [x, y] = this.neighboringPoint(sourceX, sourceY, towards)
+      this.log(`${depth}: Attempt TRAVERSE source [${sourceX}, ${sourceY}] towards ${DirAbbr[towards]} into [${x}, ${y}]`)
+
+      // Get the neighboring point's coordinates within the FireGrid
+      const fx = this._walk.ignition.x + x
+      const fy = this._walk.ignition.y + y
+      let here = `Ign [${x}, ${y}] Fire [${fx}, ${fy}]`
+      let msg = `${depth}: RETREAT from ${here}:`
+
+      // Test 1 - the neighboring point must be in the IgnitionGrid bounds
+      if (!this.inbounds(x, y)) {
+        this.log(`${msg} is out of IgnitionGrid bounds`)
+        continue // pop the next source-towards from the stack
+      }
+
+      // Neighboring point is in-bounds, so get its ignition data {dist, time, source, towards}
+      const xCol = this.xCol(x)
+      const yRow = this.yRow(y)
+      const ign = this.get(x, y)
+      here = `Ign [${x}, ${y}] [${xCol}, ${yRow}], Fire [${fx}, ${fy}] d=${ign.dist.toFixed(2)}, t=${ign.time.toFixed(2)}`
+      msg = `${depth}: RETREAT from ${here}:`
+
+      // Test 2 - neighboring point must be unvisited on this walk()
+      if (ign.source !== Unvisited) {
+        this.log(`${msg} was previously visited`)
+        continue // pop the next source-towards from the stack
+      }
+
+      // Test 3 - neighboring point must be in the FireGrid bounds
+      if (!this._fireGrid.inbounds(fx, fy)) {
+        this.log(`${msg} is out of FireGrid bounds`)
+        continue // pop the next source-towards from the stack
+      }
+
+      // Test 4 - neighboring point must be reachable from ignition pt during the current period
+      const arrives = this._walk.ignition.time + ign.time
+      if (arrives >= this._walk.period.ends()) {
+        this.log(`${msg} ignites at ${arrives}, after period ends`)
+        continue // pop the next source-towards from the stack
+      }
+
+      // Test 5 - neighboring point must be Burnable
+      const status = this._fireGrid.status(fx, fy)
+      if (status <= FireStatus.Unburnable) {
+        this.log(`${msg} FireGrid status ${status} is Unburnable`)
+        continue // pop the next source-towards from the stack
+      }
+
+      // Test 6 - neighboring point must not have burned in a PREVIOUS period
+      if (status !== FireStatus.Unburned && status < this._walk.period.begins()) {
+        this.log(`${msg} was previously burned at ${status}`)
+        continue // pop the next source-towards from the stack
+      }
+
+      // This neighboring point is traversable; set its 'source', which also flags it as Visited
+      const source = oppositeDir[towards]
+      this.setSource(x, y, source)
+      this._walk.points.traversed++
+
+      // Add all seven non-source neighbors to the stack
+      EightWays.forEach(towards => {
+        if (towards !== source) stack.push([x, y, towards, depth + 1])
+      })
+
+      // If the neighboring point is currently unignited...
+      if (status === FireStatus.Unburned) {
+        this._fireGrid.set(fx, fy, arrives)
+        this.log(`${depth}: IGNITED ${here} at ${this._walk.ignition.time} + ${ign.time} = ${arrives}`)
+        this._walk.points.ignited++
+        // this._burnMap[xCol + yRow * this.cols()] = '*'
+      }
+      // else if the neighboring point will now be ignited at an earlier time...
+      else if (arrives < status) {
+        this._fireGrid.set(fx, fy, arrives)
+        this.log(`${depth}: IGNITED EARLIER ${here} at ${this._walk.ignition.time} + ${ign.time} = ${arrives}`)
+        this._walk.points.ignitedEarlier++
+      }
+      // else the neighboring point was ignited during a previous burning period
+      else {
+        this.log(`${depth}: CROSSED ${here}, previously ignited at ${status}`)
+        this._walk.points.crossed++
+      }
+    }
   }
 
   walk (fireIgnX, fireIgnY, fireIgnTime, period) {
@@ -222,6 +322,7 @@ export class IgnitionGrid extends GeoServerGrid {
 
     this.initUnvisited()
     this.setSource(0, 0, Origin)
-    EightWays.forEach(towards => { this.traverse(0, 0, towards, 0) })
+    // EightWays.forEach(towards => { this.traverseRecursive(0, 0, towards, 0) })
+    this.traverseStack()
   }
 }

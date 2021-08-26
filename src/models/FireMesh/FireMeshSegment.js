@@ -14,10 +14,10 @@ export class FireMeshSegment {
   begins () { return this._begins }
   code () { return this._code }
   ends () { return this._ends }
-  isBurnable () { return this._code >= 0 }
-  isBurned () { return this._code > 0 }
-  isUnburned () { return this._code === 0 }
-  isUnburnable () { return this._code < 0 }
+  isBurnable () { return FireMeshCode.isBurnable(this._code) }
+  isBurned () { return FireMeshCode.isBurned(this._code) }
+  isUnburned () { return FireMeshCode.isUnburned(this._code) }
+  isUnburnable () { return FireMeshCode.isUnburnable(this._code) }
 
   // Returns TRUE if *position* is within *this* segment
   contains (position) { return position >= this._begins && position <= this._ends }

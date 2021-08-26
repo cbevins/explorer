@@ -2,8 +2,8 @@
 import { expect, test } from '@jest/globals'
 import { GeoBounds } from '../Geo/index.js'
 import { FireMesh } from './FireMesh.js'
-import { FireMeshBehaviorProvider } from './FireMeshBehaviorProvider.js'
-import { FireMeshInputProviderMock } from './FireMeshInputProviderMock.js'
+import { FireMeshBehaviorProviderBetaNSEW } from './FireMeshBehaviorProviderBetaNSEW.js'
+import { FireMeshInputProviderConstant } from './FireMeshInputProviderConstant.js'
 
 const west = 1000
 const east = 2000
@@ -12,8 +12,8 @@ const south = 3000
 const spacing = 1
 const bounds = new GeoBounds(west, north, east, south, spacing, spacing)
 
-const fireInputProvider = new FireMeshInputProviderMock()
-const fireBehaviorProvider = new FireMeshBehaviorProvider()
+const fireInputProvider = new FireMeshInputProviderConstant()
+const fireBehaviorProvider = new FireMeshBehaviorProviderBetaNSEW()
 
 test('1: FireMesh constructor', () => {
   const mesh = new FireMesh(bounds, fireInputProvider, fireBehaviorProvider)

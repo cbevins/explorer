@@ -6,7 +6,7 @@
  */
 import { FireInputProviderInterface } from '../FireBehavior/FireInputProviderInterface.js'
 
-export class FireMeshInputProviderMock extends FireInputProviderInterface {
+export class FireMeshInputProviderConstant extends FireInputProviderInterface {
   getFireInput (atX, atY, atTime, duration = 1) {
     return {
       x: atX,

@@ -1,7 +1,7 @@
 import { FireBehaviorProviderInterface } from '../FireBehavior/FireBehaviorProviderInterface.js'
 import { Sim, StorageNodeMap } from '../FireBehavior/fire-behavior-simulator.js'
 
-export class FireMeshBehaviorProvider extends FireBehaviorProviderInterface {
+export class FireMeshBehaviorProviderBetaNSEW extends FireBehaviorProviderInterface {
   constructor () {
     super()
     const sim = new Sim()

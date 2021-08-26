@@ -18,11 +18,13 @@ test('1: FireMeshLine constructor() and accessors', () => {
 
 test('2: FireMeshLine igniteAt(), segment()', () => {
   const horz = new FireMeshLine(4000)
+  expect(horz.isBurnableAt(1500)).toEqual(true)
   expect(horz.isBurnedAt(1500)).toEqual(false)
   expect(horz.isUnburnableAt(1500)).toEqual(false)
   expect(horz.isUnburnedAt(1500)).toEqual(true)
 
   expect(horz.igniteAt(1500)).toEqual(true)
+  expect(horz.isBurnableAt(1500)).toEqual(true)
   expect(horz.isBurnedAt(1500)).toEqual(true)
   expect(horz.isUnburnableAt(1500)).toEqual(false)
   expect(horz.isUnburnedAt(1500)).toEqual(false)

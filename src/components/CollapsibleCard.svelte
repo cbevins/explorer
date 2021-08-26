@@ -1,15 +1,15 @@
 <script>
   /**
-   * A simple, collapsible table
+   * A simple, collapsible card
    */
-  export let data // array of rows, where each row is an array of cols
+  export let content
   export let id
   export let title
   export let opened = false
   let target = '#' + id
 </script>
 
-<div class='card'>
+<div class='card mb-2'>
   <div class="card-body">
     <h5 class="card-title">{title}
      <button class="btn btn-primary" type="button" data-bs-toggle="collapse" aria-expanded="false"
@@ -19,18 +19,7 @@
     </h5>
 
     <div class="collapse {opened ? 'show' : ''}" id={id}>
-      <table class='table table-striped table-bordered table-sm'>
-        <thead></thead>
-        <tbody>
-          {#each data as row}
-          <tr>
-            {#each row as col}
-            <td>{col}</td>
-            {/each}
-          </tr>
-          {/each}
-        </tbody>
-      </table>
+      <p class="card-text">{content}</p>
     </div>
   </div>
 </div>

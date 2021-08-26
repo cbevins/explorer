@@ -34,6 +34,7 @@ export class GeoFireGrid extends GeoServerGrid {
    * FALSE to inform caller that there are no more ignition points.
    */
   burnForPeriod (duration) {
+    const startTime = Date.now()
     // Update the current burning period
     this.period().update(duration)
 
@@ -48,6 +49,7 @@ export class GeoFireGrid extends GeoServerGrid {
     // Expand the fire from each ignition point via Huygen's Principle
     // eslint-disable-next-line no-unused-vars
     let ignited = 0
+    let maxTraversalDepth = 0
     this._perim.points.forEach(ignPt => {
       // str += `    Ignition Point [${ignPt.x()}, ${ignPt.y()}], ignited at time ${ignPt.time()}`
 
@@ -62,9 +64,12 @@ export class GeoFireGrid extends GeoServerGrid {
       // and flood fill neighboring point ignition times accounting for unburnables
       this._ignGrid.walk(ignPt.x(), ignPt.y(), ignPt.time(), this.period())
       ignited += this._ignGrid._walk.ignited
+      maxTraversalDepth = Math.max(maxTraversalDepth, this._ignGrid.maxTraversalDepth())
     })
     // str += `, ignited ${ignited} pts, ends with ${this._burnedPts} burned pts\n`
     // console.log(str)
+    console.log(this.period().number(), 'burnForPeriod():', Date.now() - startTime,
+      'max depth:', maxTraversalDepth)
     return true
   }
 

@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte'
   import { GeoFireGrid } from '../../models/GeoFire'
+  import CollapsibleCard from '../../components/CollapsibleCard.svelte'
   import SimpleTable from '../../components/SimpleTable.svelte'
   import { drawFireEllipse, fireEllipseStatus, drawFireGrid,
     FireInputProviderMock, ignitionGridTime, setUnburnablePattern } from './index.js'
@@ -10,8 +11,8 @@
   let east = 2000
   let north = 5000
   let south = 4000
-  let xdist = 5
-  let ydist = 5
+  let xdist = 1
+  let ydist = 1
   let width = east - west
   let height = north - south
 
@@ -49,9 +50,10 @@
 
   // Runs GeoFireGrid simulation for 1 burning period
   function burn () {
+    const startTime = Date.now()
     fireGrid.burnForPeriod(periodDuration)
 
-    const burn = drawFireGrid(ctx, fireGrid)
+    const burn = drawFireGrid(ctx, fireGrid, canvas)
     burnSummary = burn.summary
 
     drawFireEllipse(ctx, fireGrid, ignX, ignY)
@@ -61,6 +63,7 @@
       ignitionTimes = ignitionGridTime(fireGrid)
     }
     if (burn.done) cancelAnimationFrame(frame)
+    console.log(fireGrid.period().number(), 'burn():', Date.now() - startTime)
   }
 
   function loop(t) {
@@ -80,7 +83,7 @@
     fireGrid.reset()
     setUnburnablePattern(fireGrid, patterns)
     fireGrid.igniteAt(ignX, ignY, ignT)
-    drawFireGrid(ctx, fireGrid)
+    drawFireGrid(ctx, fireGrid, canvas)
   }
 
   // 'Run/Pause' button callback: starts, pauses, and resumes simulation
@@ -99,6 +102,9 @@
     cancelAnimationFrame(frame)
     burn()
   }
+
+  let notes = 'Geometric fit is better with longer burning periods; '
+    + '5 minutes is much faster and has better fit than 1 minute.'
 </script>
 
 <svelte:head>
@@ -122,10 +128,13 @@
     </div>
     <!-- Burn status table -->
     <div class="row">
-      <SimpleTable title='Fire Ellipse' data={ellipseSummary} id='geoFireGridEllipse' />
+      <SimpleTable title='Geometric Fit' data={ellipseSummary} id='geoFireGridGeometricFit' />
     </div>
     <div class="row">
       <SimpleTable title='Burn Status' data={burnSummary} id='geoFireGridSummary' />
+    </div>
+    <div class="row">
+      <CollapsibleCard title='Notes' content={notes} id='geoFireGridNotes' />
     </div>
   </div>
 
@@ -133,6 +142,7 @@
     <canvas bind:this={canvas} width={width} height={height}></canvas>
   </div>
 </div>
+
 <div class="row">
   <div class="col">
     <SimpleTable title='Ignition Grid Times' data={ignitionTimes} id='geoFireGridIgnitionTimes' />
