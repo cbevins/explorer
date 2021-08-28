@@ -4,16 +4,15 @@
  *
  * FireMeshEllipses are used to expand fire perimeters in the FireLandscape
  */
-import { rotatePoint } from '../Trig/Trig'
+import { rotatePoint } from '../Trig/trig.js'
 import { FireEllipse } from '../FireEllipse/FireEllipse.js'
 
 export class FireMeshEllipse extends FireEllipse {
-  constructor (leng, wid, headingDegrees = 0, timeSinceIgnition = 1, spacing = 1, verbose = false) {
-    super(leng, wid, headingDegrees, timeSinceIgnition)
+  constructor (length, width, headingDegrees = 0, timeSinceIgnition = 1, lineSpacing = 1) {
+    super(length, width, headingDegrees, timeSinceIgnition)
     this._hlines = []
     this._hOrigin = 0
-    this._spacing = spacing
-    this._verbose = verbose
+    this._spacing = lineSpacing // spacing between neighboring horizontal and vertical lines
     this._vlines = []
     this._vOrigin = 0
     this.scanHorizontal()
@@ -64,41 +63,47 @@ export class FireMeshEllipse extends FireEllipse {
     return points
   }
 
+  estArea () {
+    let len = 0
+    this._hlines.forEach(d => { len += Math.abs(d[2] - d[1]) })
+    return len * this._spacing
+  }
+
   fmt (x, y) { return `[${x.toFixed(2)}, ${y.toFixed(2)}]` }
 
   hlines () { return this._hlines }
 
-  // Returns index of the FireEllipseMesh origin in the hlines array
+  // Returns the *index* of the FireEllipseMesh origin in the hlines array
   hOrigin () { return this._hOrigin }
 
-  scan (p1x, p1y, p2x, p2y, verbose = false) {
-    let str = ''
+  scan (p1x, p1y, p2x, p2y) {
+    // let str = ''
     // 1 - Translate line endpoints by -cx, -cy
     let t1x = p1x - this.cx()
     let t1y = p1y - this.cy()
     let t2x = p2x - this.cx()
     let t2y = p2y - this.cy()
-    str += `1: line endpts translate to ${this.fmt(t1x, t1y)} and ${this.fmt(t2x, t2y)}\n`
+    // str += `1: line endpts translate to ${this.fmt(t1x, t1y)} and ${this.fmt(t2x, t2y)}\n`
     // 2 - Rotate
     ;[t1x, t1y] = rotatePoint(t1x, t1y, 0, 0, -this.rotation())
     ;[t2x, t2y] = rotatePoint(t2x, t2y, 0, 0, -this.rotation())
-    str += `2: line endpts rotate to    ${this.fmt(t1x, t1y)} and ${this.fmt(t2x, t2y)}\n`
+    // str += `2: line endpts rotate to    ${this.fmt(t1x, t1y)} and ${this.fmt(t2x, t2y)}\n`
     // 3 - Determine intersections (may be 0, 1, or 2)
     const pts = this.ellipseLineIntersections(t1x, t1y, t2x, t2y)
-    str += `There are ${pts.length} intersections between line and ellipse\n`
+    // str += `There are ${pts.length} intersections between line and ellipse\n`
     const p = []
     pts.forEach(([x, y]) => {
-      str += `   ${this.fmt(x, y)}`
+      // str += `   ${this.fmt(x, y)}`
       // 4 - Unrotate
       ;[x, y] = rotatePoint(x, y, 0, 0, this.rotation())
-      str += ` unrotates to ${this.fmt(x, y)}`
+      // str += ` unrotates to ${this.fmt(x, y)}`
       // 5 - Translate back to ignition point
       x += this.cx()
       y += this.cy()
-      str += ` translates to ${this.fmt(x, y)}\n`
+      // str += ` translates to ${this.fmt(x, y)}\n`
       p.push([x, y])
     })
-    if (verbose) console.log(str)
+    // if (verbose) console.log(str)
     return p
   }
 
@@ -136,6 +141,6 @@ export class FireMeshEllipse extends FireEllipse {
 
   vlines () { return this._vlines }
 
-  // Returns index of the FireEllipseMesh origin in the vlines array
+  // Returns the *index* of the FireEllipseMesh origin in the vlines array
   vOrigin () { return this._vOrigin }
 }

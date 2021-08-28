@@ -53,6 +53,7 @@
 		<li><a aria-current="{segment === undefined ? 'page' : undefined}" href=".">Home</a></li>
 		<!-- <li><a aria-current="{segment === 'sprite' ? 'page' : undefined}" href="sprite">Sprite</a></li> -->
 		<li><a aria-current="{segment === 'firegrid' ? 'page' : undefined}" href="firegrid">FireGrid</a></li>
+		<li><a aria-current="{segment === 'firemesh' ? 'page' : undefined}" href="firemesh">FireMesh</a></li>
 		<li><a aria-current="{segment === 'geometry' ? 'page' : undefined}" href="geometry">Geometry</a></li>
 		<!-- <li><a aria-current="{segment === 'coords' ? 'page' : undefined}" href="coords">Coords</a></li> -->
 		<!-- <li><a aria-current="{segment === 'canvasLogo' ? 'page' : undefined}" href="canvasLogo">CanvasLogo</a></li> -->

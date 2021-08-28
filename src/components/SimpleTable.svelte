@@ -7,15 +7,19 @@
   export let title
   export let opened = false
   let target = '#' + id
+  let label = opened ? '\u2303' : '\u2304'
+  function clicked() {
+    opened = !opened
+    label = opened ? '\u2303' : '\u2304'
+  }
 </script>
 
 <div class='card'>
   <div class="card-body">
-    <h5 class="card-title">{title}
-     <button class="btn btn-primary" type="button" data-bs-toggle="collapse" aria-expanded="false"
-      data-bs-target={target} aria-controls={id}>
-        +/-
-     </button>
+    <h5 class="card-title">
+      <button class="btn btn-primary" type="button" data-bs-toggle="collapse" aria-expanded="false"
+        data-bs-target={target} aria-controls={id}
+        on:click={clicked}>{title} {label}</button>
     </h5>
 
     <div class="collapse {opened ? 'show' : ''}" id={id}>

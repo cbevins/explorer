@@ -49,6 +49,10 @@ export class FireMeshLine {
   // Client processing methods
   // ---------------------------------------------------------------------------
 
+  addSegment (begins, ends, code = FireMeshCode.burned()) {
+    this._segments.push(new FireMeshSegment(begins, ends, code))
+  }
+
   // Inserts a new FireSegment with FireSegmentCodeBurned at *position*,
   // IFF *position is currently Unburned
   igniteAt (position) {
@@ -68,6 +72,37 @@ export class FireMeshLine {
     return true
   }
 
-  // Combines connected FireMeshSegments of the same code to reduce array size
-  merge () {}
+  overlayBurned (begins, ends) {
+    let preceeds = -1 // where to insert a non-overlapping segment
+    // Get indices of all segments overlapping begins-to-ends
+    const overlaps = []
+    for (let idx = 0; idx < this._segments.length; idx++) {
+      const segment = this._segments[idx]
+      if (ends < segment.begins()) {
+        preceeds = idx
+      } else if (begins < segment.begins()) {
+        if (ends >= segment.begins()) overlaps.push(idx)
+      } else if (begins <= segment.ends()) {
+        overlaps.push(idx)
+      }
+    }
+    // If there are no overlapping segments, insert or append the new segment
+    if (!overlaps.length) {
+      if (preceeds === -1) {
+        this._segments.push(new FireMeshSegment(begins, ends))
+      } else {
+        this._segments.splice(preceeds, 0, new FireMeshSegment(begins, ends))
+      }
+    } else {
+      // Extend the first overlapping segment and remove the others
+      const first = this._segments[overlaps[0]]
+      const last = this._segments[overlaps[overlaps.length - 1]]
+      const b = Math.min(begins, first.begins())
+      const e = Math.max(ends, last.ends())
+      first.extend(b, e)
+      if (overlaps.length > 1) {
+        this._segments.splice(overlaps[0] + 1, overlaps.length - 1)
+      }
+    }
+  }
 }

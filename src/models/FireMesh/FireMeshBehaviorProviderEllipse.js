@@ -1,9 +1,9 @@
 /**
- * Determines all fire behavior variables required by GeoFireGrid and IgnitionGrid
+ * Provides a set of fire ellipse behavior results.
  */
 import { FireBehaviorProviderInterface } from '../FireBehavior/FireBehaviorProviderInterface.js'
 
-export class FireBehaviorProviderEllipse extends FireBehaviorProviderInterface {
+export class FireMeshBehaviorProviderEllipse extends FireBehaviorProviderInterface {
   /**
    * Selects the outputs and sets the fire behavior simulator configuration
    */
