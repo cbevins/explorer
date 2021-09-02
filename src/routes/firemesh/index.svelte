@@ -1,76 +1,155 @@
 <script>
 	import { onMount } from 'svelte'
-  import { FireMesh, FireMeshEllipse } from '../../models/FireMesh/index.js'
+  import { FireMesh, FireMeshBehaviorProviderEllipse, FireMeshInputProviderConstant,
+    FireMeshIgnitionEllipseProvider } from '../../models/FireMesh/index.js'
   import { GeoBounds } from '../../models/Geo/index.js'
   import SimpleSlider from '../../components/SimpleSlider.svelte'
   import SimpleTable from '../../components/SimpleTable.svelte'
 
-  // Landscape GeoBounds
-  let west = -100
-  let east = 200
-  let south = -100
-  let north = 100
-  let spacing = 1
+  // FireMesh data providers
+  let fireBehaviorProvider = new FireMeshBehaviorProviderEllipse()
+  let fireInputProvider = new FireMeshInputProviderConstant()
+  let ignitionEllipseProvider = new FireMeshIgnitionEllipseProvider(fireInputProvider, fireBehaviorProvider)
+
+  // FireMesh landscape GeoBounds
+  let west = 1450
+  let east = 2000
+  let south = 4000
+  let north = 4550
+  let spacing = 5
   let bounds = new GeoBounds(west, north, east, south, spacing, spacing)
   let width = bounds.width()
   let height = bounds.height()
   let midx = west + (east - west) / 2
   let midy = south + (north - south) / 2
+  let mesh = null // new FireMesh(bounds, ignitionEllipseProvider)
 
-  // let headRos = 93.3012701892219
-  let ellipseLength = 100
-  let ellipseWidth = 50
-  let ellipseHeadDegrees = 90
-  let timeSinceIgnition = 1
+  // Add an ignition point to kick off the fire
+  let duration = 2
+  let ignX = 1500
+  let ignY = 4500
 
+  let image = null // SVG element
+  let horzArea = 0 // burned area as estimated each burn period by drawFireMeshHorz()
+  let horzLines = 0 // lines with burned segments as estimated each burn period by drawFireMeshHorz()
+  let vertLines = 0
+  let burnPeriod = 0
+  let sizeStats = []
+  let splitLines = []
+  let horzIgnPts = []
+  let vertArea = 0
+  let vertIgnPts = []
 
-  let fe // fire ignition ellipse
-  let draw = null // SVG element
-  let sizeStats = [] // size stats array
+  // for tracking a specific line index
+  let trackIdx = -1 // set to -1 for no tracking
 
-  $: {
-    ellipseWidth = Math.min(ellipseWidth, ellipseLength)
-    fe = new FireMeshEllipse(ellipseLength, ellipseWidth, ellipseHeadDegrees,
-      timeSinceIgnition, spacing)
-    sizeStats = getSizeStats()
-    if (draw) drawLandscape(midx, midy)
-  }
-
-  function drawLandscape () {
-    draw.rect(width, height).move(west, vbY(north)).attr({ fill: 'green' })
+  // Draws the background landscape
+  function drawGridLines () {
     const grid = { color: 'black', width: 1 }
-    draw.line(west, vbY(midy), east, vbY(midy)).stroke(grid)
-    draw.line(midx, vbY(north), midx, vbY(south)).stroke(grid)
-    drawFireMeshAt(midx, midy)
-    // drawFireMeshAt(midx-50, midy)
+    image.line(west, vbY(midy), east, vbY(midy)).stroke(grid)
+    image.line(midx, vbY(north), midx, vbY(south)).stroke(grid)
+    image.circle(4).attr({fill: 'yellow', cx: ignX, cy: vbY(ignY)})
   }
 
-  function drawFireMeshAt (x = 0, y = 0) {
+  function drawImage () {
+    drawLandscape()
+    //drawFireMeshHorz()
+    drawFireMeshVert()
+    drawGridLines()
+  }
+
+  // Draws the background landscape
+  function drawLandscape () {
+    image.rect(width, height).move(west, vbY(north)).attr({ fill: 'green' })
+  }
+
+  function drawFireMeshHorz () {
+    splitLines = []
+    horzArea = 0
+    horzLines = 0
+    vertArea = 0
+    vertLines = 0
     const burned = { color: 'red', width: 1 }
-    fe.hlines().forEach(([hy, x1, x2]) => { draw.line(x1+x, vbY(hy+y), x2+x, vbY(hy+y)).stroke(burned) })
-    fe.vlines().forEach(([vx, y1, y2]) => { draw.line(vx+x, vbY(y1+y), vx+x, vbY(y2+y)).stroke(burned) })
-    draw.circle(2).attr({fill: 'yellow', cx: fe.hx()+x, cy: vbY(fe.hy()+y)})
-    draw.circle(2).attr({fill: 'yellow', cx: fe.bx()+x, cy: vbY(fe.by()+y)})
-    draw.circle(2).attr({fill: 'yellow', cx: x, cy: vbY(y)})
+    const split = { color: 'blue', width: 1 }
+    mesh.horzArray().forEach((line, idx) => {
+      const y = line.anchor()
+      const nsegs = line.segments().length
+      if (nsegs) horzLines++
+      if (nsegs > 1) splitLines.push(idx)
+      const style = (nsegs > 1) ? split : burned
+      line.segments().forEach(segment => {
+        image.line(segment.begins(), vbY(y), segment.ends(), vbY(y)).stroke(style)
+        horzArea += segment.length()
+      })
+    })
+    // Track line reporting ...
+    // if (trackIdx >= 0) {
+    //   let line = mesh.horzLine(trackIdx)
+    //   let str = `Line ${trackIdx} at Y ${line.anchor()} Period ${burnPeriod} has ${line.segments().length} segments:`
+    //   line.segments().forEach(segment => {
+    //     str += `[${segment.begins().toFixed(2)}, ${segment.ends().toFixed(2)}] `
+    //   })
+    //   console.log(str)
+    // }
+  }
+
+  function drawFireMeshVert () {
+    splitLines = []
+    vertArea = 0
+    vertLines = 0
+    const burned = { color: 'red', width: 1 }
+    const split = { color: 'blue', width: 1 }
+    mesh.vertArray().forEach((line, idx) => {
+      const x = line.anchor()
+      const nsegs = line.segments().length
+      if (nsegs) vertLines++
+      if (nsegs > 1) splitLines.push(idx)
+      const style = (nsegs > 1) ? split : burned
+      line.segments().forEach(segment => {
+        image.line(x, vbY(segment.begins()), x, vbY(segment.ends())).stroke(style)
+        vertArea += segment.length()
+      })
+    })
   }
 
   // Gets canvas and context once they are mounted
 	onMount(() => {
-    draw = SVG().addTo('#svg3Canvas').size(400, 400)
-    draw.viewbox(west, south, width, height)
-    drawLandscape()
+    image = SVG().addTo('#svg3Canvas').size(400, 400)
+    image.viewbox(west, south, width, height)
+    reset()
   })
 
-  function getSizeStats () {
-    const geoArea = fe.area()
-    const estArea = fe.estArea()
-    const pctdiff = 100 * (estArea - geoArea) / geoArea
-    return [
-      ['Ellipse Area', geoArea.toFixed(0)],
-      ['FireMesh Area', estArea.toFixed(0)],
-      ['Percent Diff', pctdiff.toFixed(2)],
-      ['Ellipse Perim', fe.perimeter().toFixed(0)]
+  function reset () {
+    mesh = new FireMesh(bounds, ignitionEllipseProvider)
+    mesh.igniteAt(ignX, ignY)
+    horzArea = 0
+    vertArea = 0
+    burnPeriod = 0
+    horzLines = 0 // horizontal lines with burned segments
+    vertLines = 0 // vertical lines with burned segments
+    sizeStats = []
+    splitLines = []
+    drawImage()
+  }
+
+  function step () {
+    burnPeriod++
+    mesh.burnForPeriod(duration, trackIdx)
+    horzIgnPts = mesh.horzIgnitionPoints()
+    vertIgnPts = mesh.vertIgnitionPoints()
+    drawImage()
+    sizeStats = [
+      ['Period', burnPeriod, burnPeriod],
+      ['', 'Horz', 'Vert'],
+      ['Ign Pts', horzIgnPts.length, vertIgnPts.length],
+      ['Burn Lines', horzLines, vertLines],
+      ['Area ft2', horzArea.toFixed(0), vertArea.toFixed(0)],
+      ['Geo Warn', mesh.warning() ? 'WARN' : 'OK', '']
     ]
+    splitLines.forEach(idx => {
+      const line = mesh.horzLine(idx)
+      sizeStats.push([`Line ${idx}`, line.segments().length])
+    })
   }
 
   // Converts geographic y-coordinate values, which increase from south-to-north,
@@ -85,16 +164,14 @@
 <div id='top'></div>
 <h5 class='mb-3'>FireMesh Tinker Toy</h5>
 <div class='row'>
-  <!-- input controls column -->
-  <div class='col'>
-    <SimpleSlider id='degreesSlider' label='Heading' bind:value={ellipseHeadDegrees} min=0 max=359/>
-    <SimpleSlider id='lengthSlider' label='Length' bind:value={ellipseLength} min=1 max=100/>
-    <SimpleSlider id='widthSlider' label='Width' bind:value={ellipseWidth} min=1 max=50/>
-    <SimpleSlider id='spacingSlider' label='Spacing' bind:value={spacing} min=1 max=10/>
+  <div class="col">
+    <div class='row'>
+      <button class='btn-primary mb-3' on:click={step}>Step</button>
+      <button class='btn-primary mb-3' on:click={reset}>Reset</button>
+    </div>
     <div class='row'>
       <SimpleTable id='statsTable' title='Stats' opened='true' data={sizeStats} />
-    </div>
+      </div>
   </div>
-  <!-- SVG column-->
   <div class='col-8' id='svg3Canvas'></div>
 </div>

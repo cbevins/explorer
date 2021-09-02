@@ -25,9 +25,13 @@ test('2: FireMeshEllipse() horizontal scan lines', () => {
   expect(scans.length).toEqual(16)
   expect(fw.hOrigin()).toEqual(1)
   // expect(fw.vOrigin()).toEqual(1)
-  let str = 'FireMeshEllipse.test.js: Horizontal Scanline Intersections for Y Steps\n'
-  scans.forEach(([y, x1, x2]) => { str += `${fmt(x1, y)}, ${fmt(x2, y)}\n` })
-  console.log(str)
+
+  const debug = false
+  if (debug) {
+    let str = 'FireMeshEllipse.test.js: Horizontal Scanline Intersections for Y Steps\n'
+    scans.forEach(([y, x1, x2]) => { str += `${fmt(x1, y)}, ${fmt(x2, y)}\n` })
+    console.log(str)
+  }
 })
 
 // deprecatedtest('3: FireMeshEllipse() vertical scan lines', () => {

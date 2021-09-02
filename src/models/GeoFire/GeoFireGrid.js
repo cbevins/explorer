@@ -34,7 +34,6 @@ export class GeoFireGrid extends GeoServerGrid {
    * FALSE to inform caller that there are no more ignition points.
    */
   burnForPeriod (duration) {
-    const startTime = Date.now()
     // Update the current burning period
     this.period().update(duration)
 
@@ -66,10 +65,6 @@ export class GeoFireGrid extends GeoServerGrid {
       ignited += this._ignGrid._walk.ignited
       maxTraversalDepth = Math.max(maxTraversalDepth, this._ignGrid.maxTraversalDepth())
     })
-    // str += `, ignited ${ignited} pts, ends with ${this._burnedPts} burned pts\n`
-    // console.log(str)
-    console.log(this.period().number(), 'burnForPeriod():', Date.now() - startTime,
-      'max depth:', maxTraversalDepth)
     return true
   }
 

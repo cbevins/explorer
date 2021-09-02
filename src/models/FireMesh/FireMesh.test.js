@@ -72,18 +72,6 @@ test('4: FireMesh igniteAt()', () => {
   expect(mesh.igniteAt(1500, 4500)).toEqual(false)
 })
 
-// ------------------------------------------------------------------------------------
-const ros = {
-  east: 6.2619789019932,
-  southeast: 50.38808570081844,
-  south: 6.2619789019932,
-  southwest: 2.010790782028448,
-  west: 1.1976913737873367,
-  northwest: 1.0258645045017885,
-  north: 1.1976913737873367,
-  northeast: 2.010790782028448
-}
-
 test('6: FireMesh burnForPeriod()', () => {
   const headRos = 50.38808570081844
   const backRos = 1.0258645045017885
@@ -116,7 +104,7 @@ test('6: FireMesh burnForPeriod()', () => {
   expect(mesh.ignitionPoints().length).toEqual(1)
   expect(mesh.ignitionPoints()).toEqual([[1500, 4500]])
 
-  console.log(mesh.horzLineAt(4500).segments())
+  // console.log(mesh.horzLineAt(4500).segments())
   expect(mesh.horzLineAt(4500).segments().length).toEqual(1)
   expect(mesh.horzLineAt(4499).segments().length).toEqual(1)
 })

@@ -48,7 +48,6 @@ test('2: GeoFireGrid.setUnburnableCol(), setUnburnableRow(), isUnburnable()', ()
   expect(gf.isUnburnable(1250, 4500)).toEqual(true) // middle vertical
   expect(gf.isUnburnable(1500, 4750)).toEqual(true) // middle horizontal
   expect(gf.isUnburnable(1510, 4740)).toEqual(false) // inside angle
-  // console.log(gf.toString('UPDATED: Pre-Fire with Unburnable Col and Row'))
 })
 
 test('3: GeoFireGrid.period()', () => {
@@ -162,7 +161,6 @@ const mockFire = {
 }
 
 test('5: GeoFireGrid.burnForPeriod()', () => {
-  console.log('Test started at --------------------------------------------------------------', Date.now())
   const gf = new GeoFireGrid(west, north, east, south, xdist, ydist, fireInputProvider)
     .setUnburnableCol(1250, 4250, 4750) // at x = 1250, y 4250 to 4750
     .setUnburnableRow(4750, 1250, 1750) // at y = 4750, x 1250 to 1750

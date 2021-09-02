@@ -7,12 +7,13 @@ import { FireMeshCode } from './FireMeshCode.js'
 export class FireMeshSegment {
   constructor (begins, ends, code = FireMeshCode.burned()) {
     this._code = code // Either FireMeshCode.burned() or FireMeshCode.unburnable()
-    this._begins = begins
-    this._ends = ends
+    this._begins = Math.min(begins, ends)
+    this._ends = Math.max(begins, ends)
   }
 
   begins () { return this._begins }
   code () { return this._code }
+  endpoints () { return [this._begins, this._ends] }
   ends () { return this._ends }
   isBurnable () { return FireMeshCode.isBurnable(this._code) }
   isBurned () { return FireMeshCode.isBurned(this._code) }
@@ -30,6 +31,8 @@ export class FireMeshSegment {
 
   // Returns TRUE if *this* segment follows *position*
   follows (position) { return position < this._begins }
+
+  length () { return Math.abs(this._ends - this._begins) }
 
   // Returns TRUE if *this* segment preceeds *position*
   preceeds (position) { return position > this._ends }

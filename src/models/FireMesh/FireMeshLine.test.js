@@ -176,4 +176,82 @@ test('3: FireMeshLine overlayBurned() without Unburnables', () => {
   expect(line.segment(26).ends()).toEqual(855)
   expect(line.segment(27).begins()).toEqual(860)
   expect(line.segment(27).ends()).toEqual(865)
+  /*
+    Period 5 Ign Pt [1636.25, 4392.00] IgnEllipse y -36.00 x 31.49 to 35.12
+    Overlay Line 194 y 4356 seg 1667.74 to 1671.37
+    Line 194 now has 3 segments:
+        [1608.54, 1612.17]
+        [1625.97, 1640.50]
+        [1667.74, 1671.37]
+
+    Period 5 Ign Pt [1569.85, 4391.00] IgnEllipse y -35.00 x 28.85 to 36.06
+    Overlay Line 194 y 4356 seg 1598.70 to 1605.91
+    Line 194 now has 4 segments:
+        [1608.54, 1612.17]
+        [1625.97, 1640.50]
+        [1598.70, 1605.91]
+        [1667.74, 1671.37]
+ */
+
+  /*
+    Period 5 Ign Pt [1637.83, 4389.00] IgnEllipse y -33.00 x 25.19 to 36.30
+    Overlay Line 194 y 4356 seg 1663.02 to 1674.13
+    Line 194 now has 4 segments:
+        [1608.54, 1612.17]
+        [1625.97, 1640.50]
+        [1597.41, 1608.51]
+        [1663.02, 1674.13]
+
+    Period 5 Ign Pt [1573.40, 4388.00] IgnEllipse y -32.00 x 23.65 to 36.13
+    Overlay Line 194 y 4356 seg 1597.05 to 1609.53
+    Line 194 now has 3 segments:
+        [1597.05, 1609.53]
+        [1597.41, 1608.51]
+        [1663.02, 1674.13]
+*/
+})
+
+test('4: FireMeshLine overlayBurned() error 1', () => {
+  // This was the overlay sequence that lead to the error
+  const p4 = [
+    [1608.54, 1612.17],
+    [1625.97, 1640.50],
+    [1667.74, 1671.37],
+    [1598.70, 1605.91]
+  ]
+  const p5 = [
+    [1663.02, 1674.13],
+    [1597.05, 1609.53]
+  ]
+  const line = new FireMeshLine(4000)
+  expect(line.segments().length).toEqual(0)
+
+  line.overlayBurned(1608.54, 1612.17)
+  expect(line.segments().length).toEqual(1)
+
+  line.overlayBurned(1625.97, 1640.50)
+  expect(line.segments().length).toEqual(2)
+
+  line.overlayBurned(1667.74, 1671.37)
+  expect(line.segments().length).toEqual(3)
+
+  line.overlayBurned(1598.70, 1605.91)
+  expect(line.segments().length).toEqual(4)
+  expect(line.segment(0).endpoints()).toEqual([1598.70, 1605.91])
+  expect(line.segment(1).endpoints()).toEqual([1608.54, 1612.17])
+  expect(line.segment(2).endpoints()).toEqual([1625.97, 1640.50])
+  expect(line.segment(3).endpoints()).toEqual([1667.74, 1671.37])
+
+  line.overlayBurned(1663.02, 1674.13)
+  expect(line.segments().length).toEqual(4)
+  expect(line.segment(0).endpoints()).toEqual([1598.70, 1605.91])
+  expect(line.segment(1).endpoints()).toEqual([1608.54, 1612.17])
+  expect(line.segment(2).endpoints()).toEqual([1625.97, 1640.50])
+  expect(line.segment(3).endpoints()).toEqual([1663.02, 1674.13])
+
+  line.overlayBurned(1597.05, 1609.53)
+  expect(line.segments().length).toEqual(3)
+  expect(line.segment(0).endpoints()).toEqual([1597.05, 1612.17])
+  expect(line.segment(1).endpoints()).toEqual([1625.97, 1640.50])
+  expect(line.segment(2).endpoints()).toEqual([1663.02, 1674.13])
 })

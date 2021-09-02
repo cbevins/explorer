@@ -72,7 +72,17 @@ export class FireMeshLine {
     return true
   }
 
-  overlayBurned (begins, ends) {
+  overlayBurned (segBegins, segEnds, track = false, str = '') {
+    const begins = Math.min(segBegins, segEnds)
+    const ends = Math.max(segBegins, segEnds)
+    if (track) {
+      str += `\noverlayBurned() begins with ${this.segments().length} segments:\n`
+      this.segments().forEach(segment => {
+        str += `    [${segment.begins().toFixed(2)}, ${segment.ends().toFixed(2)}]\n`
+      })
+    }
+
+    // console.log(`overlayBurned() ${begins}, ${ends} ${track}`)
     let preceeds = -1 // where to insert a non-overlapping segment
     // Get indices of all segments overlapping begins-to-ends
     const overlaps = []
@@ -80,17 +90,20 @@ export class FireMeshLine {
       const segment = this._segments[idx]
       if (ends < segment.begins()) {
         preceeds = idx
-      } else if (begins < segment.begins()) {
-        if (ends >= segment.begins()) overlaps.push(idx)
-      } else if (begins <= segment.ends()) {
+        str += `--- CASE 1: ends=${ends} < segment.begins() ${segment.begins()}\n`
+        break
+      } else if (begins <= segment.ends() && ends >= segment.begins()) {
+        str += '--- CASE 2\n'
         overlaps.push(idx)
       }
     }
     // If there are no overlapping segments, insert or append the new segment
     if (!overlaps.length) {
       if (preceeds === -1) {
+        str += '--- CASE 3\n'
         this._segments.push(new FireMeshSegment(begins, ends))
       } else {
+        str += '--- CASE 4\n'
         this._segments.splice(preceeds, 0, new FireMeshSegment(begins, ends))
       }
     } else {
@@ -100,9 +113,20 @@ export class FireMeshLine {
       const b = Math.min(begins, first.begins())
       const e = Math.max(ends, last.ends())
       first.extend(b, e)
+      str += '--- CASE 5\n'
       if (overlaps.length > 1) {
+        str += '--- CASE 5+SPLICE\n'
         this._segments.splice(overlaps[0] + 1, overlaps.length - 1)
       }
+    }
+
+    // DEBUGGING
+    if (track) {
+      str += `overlayBurn() ends with ${this.segments().length} segments:\n`
+      this.segments().forEach(segment => {
+        str += `    [${segment.begins().toFixed(2)}, ${segment.ends().toFixed(2)}]\n`
+      })
+      console.log(str)
     }
   }
 }
